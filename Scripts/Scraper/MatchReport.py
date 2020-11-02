@@ -119,7 +119,26 @@ class MatchReport:
         return event_dict
 
     def get_stats(self):
-        pass
+        def stat_to_dict(txt, side_flag):
+            order = [1, 2, 0]
+            tmp = re.findall(r'\d+', txt)
+            values = [tmp[index] for index in order] if side_flag != 1 else tmp
+            return {'Successful': values[0], 'Total': values[1], 'Percent': values[2]}
+
+        teams_stats = {'Home Team': {}, 'Away Team': {}}
+        stats_soup = self.soup.find_all('div', {'id': "team_stats"})[0].contents[3]
+        for i, item in {1: 'Home Team', 3: 'Away Team'}.items():
+            teams_stats[item]['Name'] = ' '.join(stats_soup.contents[1].contents[i].contents[0].text.split())
+            for j in range(3, 16, 4):
+                key = stats_soup.contents[j].text
+                temp = stats_soup.contents[j + 2].contents[i].contents[1].contents[1].text
+                teams_stats[item][key] = temp if j == 3 else stat_to_dict(temp, i)
+            teams_stats[item]['Cards'] = {'Yellow': 0, 'Red': 0}
+            temp = stats_soup.contents[21].contents[i].contents[1].contents[1].contents[0]
+            for j in range(0, len(temp)):
+                value = 'Yellow' if temp.contents[j].attrs['class'][0] == 'yellow_card' else 'Red'
+                teams_stats[item]['Cards'][value] += 1
+        return teams_stats
 
     def get_extra_stats(self):
         extra_stats_soup = self.soup.find_all('div', {'id': "team_stats_extra"})[0]
