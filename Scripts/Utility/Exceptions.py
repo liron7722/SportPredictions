@@ -24,3 +24,22 @@ class PageNotLoaded(Error):
         return f'Url: {self.url}\n' \
                f'Status Code: {self.status_code}\n' \
                f'Message: {self.message}'
+
+
+class ParseError(Error):
+    """Exception raised for errors with status code of request.
+
+        Attributes:
+            url -- url of the request
+            func -- function name where error accord
+            message -- explanation of the error
+        """
+
+    def __init__(self, url, message=f"Got error when trying to parse the data provided"):
+        self.url = url
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f'Url: {self.url}\n' \
+               f'Message: {self.message}'
