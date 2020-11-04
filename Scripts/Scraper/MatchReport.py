@@ -1,27 +1,36 @@
 #!/usr/bin/env python3
 
 import re
+import json
 import requests
 import pandas as pd
+from functools import reduce
 from bs4 import BeautifulSoup
-from ..Utility.Exceptions import PageNotLoaded
+from Scripts.Utility.json import NpEncoder
+from Scripts.Utility.Exceptions import PageNotLoaded, ParseError
 
 
 class MatchReport:
-    def __init__(self, link):
-        r = requests.get(link)
-        if r.status_code != 200:
-            raise PageNotLoaded(r.url, r.status_code)
-        page_text = r.text.replace('<!--\n', '')
-        self.soup = BeautifulSoup(page_text, "lxml")
-        self.tables = pd.read_html(str(self.soup))
-        self.score_box = self.get_score_box()
-        self.register_teams = self.get_register_teams()
-        self.events = self.get_events()
-        self.stats = self.get_stats()
-        self.extra_stats = self.get_extra_stats()
+    score_box = None
+    register_teams = None
+    events = None
+    stats = None
+    extra_stats = None
+    dict_tables = None
 
-    def get_score_box(self):
+    def __init__(self, link: str, soup: BeautifulSoup = None):
+        if soup is None:
+            r = requests.get(link)
+            if r.status_code != 200:
+                raise PageNotLoaded(r.url, r.status_code)
+            page_text = r.text.replace('<!--\n', '')
+            self.soup = BeautifulSoup(page_text, "lxml")
+        else:
+            self.soup = soup
+        self.url = link
+        self.df_tables = pd.read_html(str(self.soup))
+
+    def set_score_box(self):
         score_box_soup = self.soup.find_all('div', {'class': "scorebox"})[0]
         info_dict = {'DateTime': {}, 'Home Team': {}, 'Away Team': {}, 'Officials': []}
         for i, key in {1: 'Home Team', 3: 'Away Team'}.items():
@@ -78,11 +87,11 @@ class MatchReport:
 
         return info_dict
 
-    def get_register_teams(self):
+    def set_register_teams(self):
         register_teams = {'Home Team': {}, 'Away Team': {}}
         for i, item in {0: 'Home Team', 1: 'Away Team'}.items():
             register_players = {'Starting': [], 'Substitute': []}
-            temp_dict = self.tables[i].to_dict()  # table 0# and 1# are Home and Away teams register players table
+            temp_dict = self.df_tables[i].to_dict()  # table 0# and 1# are Home and Away teams register players table
             keys = list(temp_dict.keys())  # first key is the player numbers, second key is the players name
             player_dict = temp_dict[keys[1]]  # getting the names
             player_dict.pop(11)  # removing bench string from the dict at row 11
@@ -92,7 +101,7 @@ class MatchReport:
             register_teams[item] = register_players  # placing player list on the dict
         return register_teams
 
-    def get_events(self):
+    def set_events(self):
         # get events starting index
         def get_start_index(soup):
             for index in range(len(soup)):
@@ -103,22 +112,29 @@ class MatchReport:
                     continue
 
         events_soup = self.soup.find_all('div', {'id': "events_wrap"})[0]
-        event_dict = {'First Half': [], 'Second Half': []}
+        headers = ['Half Time', 'Full Time', 'Penalty Shootout']
+        event_dict = {'First Half': [], 'Half Time': [], 'Full Time': [], 'Penalty Shootout': []}
         start_index = get_start_index(events_soup.contents[1].contents)
-        for key in event_dict:
-            for i in range(start_index, len(events_soup.contents[1].contents), 2):
-                temp = events_soup.contents[1].contents[i]
-                if temp.text != 'Half Time':
-                    event_dict[key].append({
-                        'Scoreboard': temp.contents[1].contents[2].text,
-                        'Event': temp.contents[3].contents[1].attrs['class'][1],
-                        'Player': temp.contents[3].contents[3].contents[1].contents[1].text
-                    })
-                else:
-                    break
+        key = 'First Half'
+        for i in range(start_index, len(events_soup.contents[1].contents), 2):
+            temp = events_soup.contents[1].contents[i]
+            if temp.text in headers:
+                key = headers.pop(0)
+                continue
+            else:
+                time_value = re.findall(r'\d+', temp.contents[1].contents[0])
+                event_dict[key].append({
+                    'Minute': time_value[0] if len(time_value) == 1
+                    else {'Minute': time_value[0], 'Added Time': time_value[1]},
+                    'Scoreboard': temp.contents[1].contents[2].text,
+                    'Event': temp.contents[3].contents[1].attrs['class'][1],
+                    'Player': temp.contents[3].contents[3].contents[1].contents[1].text
+                })
+
         return event_dict
 
-    def get_stats(self):
+    def set_stats(self):
+        # reorder stats per side
         def stat_to_dict(txt, side_flag):
             order = [1, 2, 0]
             tmp = re.findall(r'\d+', txt)
@@ -129,10 +145,12 @@ class MatchReport:
         stats_soup = self.soup.find_all('div', {'id': "team_stats"})[0].contents[3]
         for i, item in {1: 'Home Team', 3: 'Away Team'}.items():
             teams_stats[item]['Name'] = ' '.join(stats_soup.contents[1].contents[i].contents[0].text.split())
+            # getting the stats
             for j in range(3, 16, 4):
-                key = stats_soup.contents[j].text
-                temp = stats_soup.contents[j + 2].contents[i].contents[1].contents[1].text
-                teams_stats[item][key] = temp if j == 3 else stat_to_dict(temp, i)
+                key = stats_soup.contents[j].text  # stat name
+                temp = stats_soup.contents[j + 2].contents[i].contents[1].contents[1].text  # stat values
+                teams_stats[item][key] = temp if j == 3 else stat_to_dict(temp, i)  # store value or separate to dict
+            # getting cards count
             teams_stats[item]['Cards'] = {'Yellow': 0, 'Red': 0}
             temp = stats_soup.contents[21].contents[i].contents[1].contents[1].contents[0]
             for j in range(0, len(temp)):
@@ -140,27 +158,128 @@ class MatchReport:
                 teams_stats[item]['Cards'][value] += 1
         return teams_stats
 
-    def get_extra_stats(self):
+    def set_extra_stats(self):
         extra_stats_soup = self.soup.find_all('div', {'id': "team_stats_extra"})[0]
         home_dict, away_dict = dict(), dict()
-        stat_name, home_value, away_value = 'stat', '', ''
-
+        temp_vars = ['', 'stat', '']
         for j in range(1, len(extra_stats_soup.contents), 2):
             extra_stats_col = extra_stats_soup.contents[j].contents
             for i in range(1, len(extra_stats_col)):
-                extra_stats_row = extra_stats_col[i]
-                if i % 4 == 0:
-                    home_dict[stat_name] = home_value
-                    away_dict[stat_name] = away_value
-                    continue
-                else:
-                    value = extra_stats_row.text
-
-                    if i % 4 == 1:
-                        home_value = value
-                    elif i % 4 == 2:
-                        value = 'Name' if value == '\xa0' else value
-                        stat_name = value
-                    elif i % 4 == 3:
-                        away_value = value
+                if i % 4 == 0:  # saving values
+                    home_dict[temp_vars[1]] = temp_vars[0]
+                    away_dict[temp_vars[1]] = temp_vars[2]
+                else:  # extracting values
+                    value = extra_stats_col[i].text
+                    temp_vars[(i % 4) - 1] = 'Name' if value == '\xa0' else value
         return {'Home Team': home_dict, 'Away Team': away_dict}
+
+    def set_tables(self):
+        # Major league with more info
+        if len(self.df_tables) in [20]:
+            return {'Home Team': {
+                'Players stats': self.set_players_stats(self.df_tables[3:9]),
+                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[9]),
+                'Shots stats': self.set_shots_stats(self.df_tables[-2])
+            },
+                'Away Team': {
+                    'Players stats': self.set_players_stats(self.df_tables[10:16]),
+                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[16]),
+                    'Shots stats': self.set_shots_stats(self.df_tables[-1])
+            }}
+        else:  # Minor league with less info
+            return {'Home Team': {
+                'Players stats': self.set_players_stats(self.df_tables[3]),
+                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[4]),
+                'Shots stats': {}
+            },
+                'Away Team': {
+                    'Players stats': self.set_players_stats(self.df_tables[5]),
+                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[6]),
+                    'Shots stats': {}
+                }}
+
+    @staticmethod
+    def change_nan(table):
+        return table.where(pd.notnull(table), None)  # Nan to None
+
+    @staticmethod
+    def change_col_name(cols):
+        # Given better col name
+        return [f"{'General' if 'Unnamed' in col[0] else col[0]} - {col[1]}" for col in cols]
+
+    def set_players_stats(self, tables):
+        # combine tables and removing duplicate columns
+        combine_table = reduce(lambda left, right: pd.merge(left, right), tables) if type(tables) is list else tables
+        combine_table.columns = self.change_col_name(combine_table.columns)
+        combine_table = self.change_nan(combine_table)
+        return {
+            'Total': combine_table.iloc[-1].to_dict(),
+            'Players': [combine_table.iloc[i].to_dict() for i in range(len(combine_table[:-1]))]
+        }
+
+    def set_goalkeeper_stats(self, table):
+        table.columns = self.change_col_name(table.columns)
+        table = self.change_nan(table)
+        return table.to_dict()
+
+    def set_shots_stats(self, table):
+        # Rename bad columns
+        table.columns = self.change_col_name(table.columns)
+        table = table.dropna(thresh=1).reset_index(drop=True)
+        table = self.change_nan(table)
+        return [table.iloc[i].to_dict() for i in range(len(table))]
+
+    def parse(self):
+        try:
+            self.score_box = self.set_score_box()
+            self.register_teams = self.set_register_teams()
+            self.events = self.set_events()
+            self.stats = self.set_stats()
+            self.extra_stats = self.set_extra_stats()
+            self.dict_tables = self.set_tables()
+        except IndexError:
+            raise ParseError(self.url)
+        except AttributeError:
+            raise ParseError(self.url)
+
+    def get_score_box(self):
+        return self.score_box
+
+    def get_register_teams(self):
+        return self.register_teams
+
+    def get_events(self):
+        return self.events
+
+    def get_stats(self):
+        return self.stats
+
+    def get_extra_stats(self):
+        return self.extra_stats
+
+    def get_dict_tables(self):
+        return self.dict_tables
+
+    def to_json(self, name: str, file: bool = False):
+        data = {
+            'URL': self.url,
+            'Score Box': self.get_score_box(),
+            'Register Teams': self.get_register_teams(),
+            'Events': self.get_events(),
+            'Stats': self.get_stats(),
+            'Extra Stats': self.get_extra_stats(),
+            'Dict Tables': self.get_dict_tables(),
+        }
+        if file:
+            # File output
+            with open(name, 'w') as outfile:
+                json.dump(data, outfile, indent=4, ensure_ascii=True, cls=NpEncoder)
+        else:
+            return data
+
+    def save_soup(self, name: str):
+        data = {
+            'Soup String': self.soup.__str__(), # takes 4 times more of spaces
+        }
+        with open(name, 'w') as outfile:
+            json.dump(data, outfile, indent=4, ensure_ascii=False, cls=NpEncoder)
