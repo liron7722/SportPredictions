@@ -260,7 +260,7 @@ class MatchReport:
     def get_dict_tables(self):
         return self.dict_tables
 
-    def to_json(self, name: str, file: bool = False):
+    def to_json(self, name: str = None, file: bool = False):
         data = {
             'URL': self.url,
             'Score Box': self.get_score_box(),
@@ -271,6 +271,8 @@ class MatchReport:
             'Dict Tables': self.get_dict_tables(),
         }
         if file:
+            if name is None:
+                name = 'NoName.json'
             # File output
             with open(name, 'w') as outfile:
                 json.dump(data, outfile, indent=4, ensure_ascii=True, cls=NpEncoder)
@@ -279,7 +281,7 @@ class MatchReport:
 
     def save_soup(self, name: str):
         data = {
-            'Soup String': self.soup.__str__(), # takes 4 times more of spaces
+            'Soup String': self.soup.__str__(),  # takes 4 times more of spaces
         }
         with open(name, 'w') as outfile:
             json.dump(data, outfile, indent=4, ensure_ascii=False, cls=NpEncoder)

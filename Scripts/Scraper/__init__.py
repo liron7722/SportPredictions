@@ -1,1 +1,3 @@
-from .MatchReport import MatchReport
+#!/usr/bin/env python3
+
+from . import SoccerScraper
