@@ -23,7 +23,9 @@ class PageNotLoaded(Error):
     def __str__(self):
         return f'Url: {self.url}\n' \
                f'Status Code: {self.status_code}\n' \
-               f'Message: {self.message}'
+               f'Message: {self.message}\n' \
+               f'Please try again later...\n' \
+               f'Mean while you can check manually if the site is down or ip address is blocked.'
 
 
 class ParseError(Error):
