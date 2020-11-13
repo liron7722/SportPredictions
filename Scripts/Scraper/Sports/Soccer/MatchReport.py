@@ -276,9 +276,6 @@ class MatchReport:
     def is_scraped(self):
         return self.scraped_flag
 
-    def get_url(self):
-        return self.url
-
     def to_json(self, name: str = None, to_file: bool = False):
         data = {
             'URL': self.url,
