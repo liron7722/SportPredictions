@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import logging
 import logging.handlers
-from .path import create_dir
+from Scripts.Utility.path import create_dir
+
+BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}Logs{os.sep}"
 
 
 class Logger:
@@ -18,7 +21,7 @@ class Logger:
     # do - set logger settings
     @staticmethod
     def start(log_name, log_path, logger=None):
-        path = log_path if log_path is not None else ""
+        path = BASE_PATH + log_path if log_path is not None else ""
         name = log_name if log_name is not None else "NoName.log"
         new_logger = logging.getLogger(name) if logger is None else logger
 
@@ -30,9 +33,11 @@ class Logger:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
 
+        # TODO add elastic stream
+
         '''
         # File handler
-        createDir(path)
+        create_dir(path)
         file_handler = logging.handlers.RotatingFileHandler(path + name, maxBytes=10485760, backupCount=10)
         file_handler.setFormatter(formatter)
         
