@@ -9,24 +9,29 @@ from Scripts.Scraper.Sports.Soccer.MatchReport import MatchReport
 
 class Season:
     base: str = 'https://fbref.com/'  # main url
-    scraped_flag: bool = False
-    fixtures: list = []
-    nationalities: pd.DataFrame = None
     to_scrape = []
+    fixtures: list = []
+    scraped_flag: bool = False
+    nationalities: pd.DataFrame = None
 
     def __init__(self, key, url, info):
         self.key = key
         self.base_info = info
         self.url = self.base + url
         text = connect(url=self.url, return_text=True)
-        page_text = text.replace('<!--\n', '')  # replace method used to get tables in comments
+        page_text = text.replace('<!--\n', '')  # replace used to get tables in comments but do appear on the site
         self.soup = BeautifulSoup(page_text, "lxml")
 
-    def db_load(self):
-        pass  # TODO
+    def load_db(self, data: dict = None):
+        if data is not None:
+            self.base_info = data['Basic Info']
+            self.to_scrape = data['To Scrape']
 
     def get_base_info(self):
-        return self.base_info.to_json()
+        if type(self.base_info) is not dict:  # pd.core.series.Series:  # Ignore
+            return self.base_info.to_json()
+        else:  # already as json because loaded from db
+            return self.base_info
 
     def get_fixtures(self):
         values = []
@@ -47,11 +52,11 @@ class Season:
         temp.parse()  # fixture parse
         self.fixtures.append({index: temp})  # add fixture to the list
 
-    def scrape_fixtures(self, url, scrape_list: list = None):
+    def scrape_fixtures(self, url: str, scrape_list: list):
         text = connect(url=self.base + url, return_text=True)
         soup = BeautifulSoup(text, "lxml")
         html_urls = soup.find('tbody').find_all('tr')  # get links of all fixtures
-        scrape_list = [j for j in range(len(html_urls))] if scrape_list is None else scrape_list
+        scrape_list = [j for j in range(len(html_urls))] if len(scrape_list) == 0 else scrape_list
         for i in scrape_list:
             temp = html_urls[i].contents[-2]
             try:
@@ -61,7 +66,7 @@ class Season:
                 if len(temp.attrs) != 2:  # 2 is attrs of the table spacer
                     self.to_scrape.append(i)  # fixture don't have match link - most likely postpone or yet to happen
 
-    def scrape_nationalities(self, url):
+    def scrape_nationalities(self, url: str, _):
         text = connect(url=self.base + url, return_text=True)
         soup = BeautifulSoup(text, "lxml")
         df = pd.read_html(str(soup))[0]
@@ -83,10 +88,9 @@ class Season:
         funcs = {'Fixtures': self.scrape_fixtures, 'Nationalities': self.scrape_nationalities}
         temp = self.navbar()  # get inner navbar links
         for key, url in temp.items():
-            funcs[key](url)
-        #else:
-        #    self.scrape_fixtures(url=temp['Fixtures'], scrape_list=self.to_scrape)  # TODO if db loaded
+            funcs[key](url, self.to_scrape)  # Ignore or make it based of the key calls
         self.scraped_flag = True
+        self.is_scraped()
 
     def is_scraped(self):
         for item in self.fixtures:
@@ -112,5 +116,6 @@ class Season:
         else:
             return data
 
-    def run(self):
-        self.scrape()
+    def run(self, data: dict = None):
+        self.load_db(data=data)  # load data to know what left to scrape
+        self.scrape()  # scrape data

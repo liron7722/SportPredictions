@@ -5,7 +5,7 @@ import unittest
 from Scripts.Utility.json import read
 from Scripts.Scraper.Sports.Soccer.MatchReport import MatchReport
 
-BASE_PATH = 'C:/Users/Liron/Documents/githubProjects/SportPredictions/'
+BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}"
 
 
 class TestMatchReport(unittest.TestCase):

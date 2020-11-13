@@ -4,7 +4,7 @@ import pandas as pd
 from Scripts.Utility.json import read
 from Scripts.Scraper.Sports.Soccer.Season import Season
 
-BASE_PATH = 'C:/Users/Liron/Documents/githubProjects/SportPredictions/'
+BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}"
 
 
 class TestSeason(unittest.TestCase):
@@ -30,10 +30,14 @@ class TestSeason(unittest.TestCase):
                 os.remove(key)
 
     def test_nationalities(self):
-        pass  # TODO
+        raise NotImplementedError  # TODO
 
     def test_navbar(self):
-        pass  # TODO
+        raise NotImplementedError  # TODO
+
+    def test_results(self):
+        for key, season in self.seasons.items():
+            self.assertEqual(season.to_json(to_file=False), self.expected_results[key])
 
     def test_is_scraped(self):
         for season in self.seasons.values():
@@ -49,6 +53,7 @@ class TestSeason(unittest.TestCase):
 
     @staticmethod
     def start():
+        print("This may take few minutes for each season testing, Be patient!")
         unittest.main()
 
 
