@@ -68,7 +68,7 @@ class SoccerScraper(Scraper):
             if comp.key == key:
                 flag = False
                 break
-        if flag and key not in ['2020-2021', '2022']:
+        if flag and key not in ['2020-2021', '2022']:  # Current and future season, will be scraped in other urls
             self.log(f'Cmd: add_competitions,\tKey: {key},\tUrl: {url}')
             self.competitions.append(
                 Competition(key=key, url=url, logger=self.logger)
