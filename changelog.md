@@ -1,5 +1,4 @@
-### Known Bugs:
-    - Fix reading url's from seasons table in competition class    
+### Known Bugs:   
     - You tell me
     
 ### Coming  Up:
@@ -7,9 +6,7 @@
 	- check loop scrape work as intended
 	- Complete season test file
 
-###ToDo List:  
-	- Requirements File
-	- Documentions
+### ToDo List:  
 	- ELK 
 	- Environment variables
 	- Docker
@@ -28,6 +25,10 @@
 
 
 ### Updates:
+#### update 4#: 
+    - Documentions
+	- Requirements File
+
 #### update 3#:  
     - added scraper scripts for competition and soccer scraper
     - added test scripts for competition and soccer scraper
@@ -38,6 +39,8 @@
     - Integrate DB (MongoDB)
     - Integrate logger
     - added 2 more tests to season test
+	- fixed bugs and minor improvements
+	
     
 #### update 2#:  
 	- added Utility scripts like db, json, requests, logger
