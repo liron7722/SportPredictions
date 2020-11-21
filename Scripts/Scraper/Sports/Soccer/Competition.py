@@ -32,7 +32,6 @@ class Competition:
         self.logger = logger
 
     def load_db(self, data: dict):
-        # TODO check if there is something to scrape
         self.log(f'Cmd: load_db')
         if data is None:
             self.log(f'Cmd: Nothing to load')
@@ -144,8 +143,9 @@ class Competition:
                 'Seasons': self.get_seasons_as_json()
                 }
         if file:
+            name = name if name is not None else f'{self.key}'
             self.log('Cmd: File saving...')
-            save(data=data, name=name)
+            save(data=data, name=f'{name}.json')
         else:
             self.log('Cmd: Retrieve data')
             return data

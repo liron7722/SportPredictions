@@ -18,7 +18,7 @@ class SoccerScraper(Scraper):
 
     def __init__(self, link: str = None):
         self.url = self.url if link is None else link
-        super().__init__(self.url, f'{self.key}.log')
+        super().__init__(self.url, self.key)
         self.db_client = DB(self.key)
 
     def get_collection_data(self, collection_list, db):
@@ -80,8 +80,9 @@ class SoccerScraper(Scraper):
         for comp in self.competitions:
             try:
                 comp.scrape()  # Competition scrape
+                comp.to_json(to_file=True)
             except PageNotLoaded or ParseError:
-                message = f'Stopped in SoccerScraper script, scrape_competitions method' \
+                message = f'Error stopped in SoccerScraper script, scrape_competitions method' \
                           f'Competition Key: {comp.key}'
                 self.logger.exception(message) if self.logger is not None else print(message)
 

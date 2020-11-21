@@ -20,8 +20,8 @@ class Logger:
     # output - logger as logging class
     # do - set logger settings
     @staticmethod
-    def start(log_name, log_path, logger=None):
-        path = BASE_PATH + log_path if log_path is not None else ""
+    def start(log_name: str, log_path: str = None, logger=None):
+        path = log_path if log_path is not None else BASE_PATH
         name = log_name if log_name is not None else "NoName.log"
         new_logger = logging.getLogger(name) if logger is None else logger
 
@@ -35,15 +35,13 @@ class Logger:
 
         # TODO add elastic stream
 
-        '''
         # File handler
         create_dir(path)
-        file_handler = logging.handlers.RotatingFileHandler(path + name, maxBytes=10485760, backupCount=10)
+        file_handler = logging.handlers.RotatingFileHandler(path + name, maxBytes=10485760, backupCount=3)
         file_handler.setFormatter(formatter)
         
         # adding Handlers
         new_logger.addHandler(file_handler)
-        '''
         new_logger.addHandler(stream_handler)
 
         new_logger.info('Initialize Log')

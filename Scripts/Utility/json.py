@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+import os
 import json
 import numpy as np
+
+BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}Products{os.sep}"
 
 
 class NpEncoder(json.JSONEncoder):
@@ -16,11 +19,11 @@ class NpEncoder(json.JSONEncoder):
             return super(NpEncoder, self).default(obj)
 
 
-def save(data, name: str = None):
-    if name is None:
-        name = 'NoName.json'
+def save(data, name: str = None, path: str = None):
+    name = 'NoName.json' if name is None else name
+    path = BASE_PATH if path is None else path
     # File output
-    with open(name, 'w') as outfile:
+    with open(path + name, 'w') as outfile:
         json.dump(data, outfile, indent=4, ensure_ascii=True, cls=NpEncoder)
 
 
