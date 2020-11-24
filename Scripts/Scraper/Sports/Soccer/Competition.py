@@ -41,9 +41,10 @@ class Competition:
                     self.add_season(season['URL'], season['Basic Info'], len(self.seasons))
 
     def add_season(self, url: str, info, index: int):
-        self.log(f'Cmd: add_season')
+        self.log(f'Cmd: add_season\t Url: {url}')
         temp = Season(self.key, url, info)
         temp.scrape()
+        self.log('Finished scrape the season')
         self.seasons.append({index: temp})
 
     # Getters
