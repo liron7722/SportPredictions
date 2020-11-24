@@ -59,14 +59,14 @@ class MatchReport:
         }
 
         info_dict['Competition'] = temp.contents[2].text  # Competition
-        attendance_flag = 0  # in case match played with out attendances
-        if 'Attendance' in temp.contents[4].text:
-            attendance_flag = 1
-            info_dict['Attendance'] = temp.contents[4].text.split(': ')[1]  # Attendance
-        info_dict['Venue'] = temp.contents[4 + attendance_flag].text.split(': ')[1]  # Venue
+        optionals_flag = 1 if 'Histor' in temp.contents[3].text else 0  # 'Historical' or 'History'
+        if 'Attendance' in temp.contents[4 + optionals_flag].text:
+            info_dict['Attendance'] = temp.contents[4 + optionals_flag].text.split(': ')[1]  # Attendance
+            optionals_flag += 1
+        info_dict['Venue'] = temp.contents[4 + optionals_flag].text.split(': ')[1]  # Venue
 
         # Officials
-        for ref in temp.contents[5 + attendance_flag].text.split(': ')[1].split('\xa0· '):
+        for ref in temp.contents[5 + optionals_flag].text.split(': ')[1].split('\xa0· '):
             values = ref.split(' ')  # split between Name and Position
             info_dict['Officials'].append({
                 'Name': values[0].replace('\xa0', ' '),  # Officials Name

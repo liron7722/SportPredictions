@@ -60,11 +60,14 @@ class Season:
         for i in scrape_list:
             temp = html_urls[i].contents[-2]
             try:
-                url = temp.find('a').get('href').removeprefix('/')  # Fixture url
-                self.add_fixture(self.base + url, i)
+                if temp.text == 'Match Report':
+                    url = temp.find('a').get('href').removeprefix('/')  # Fixture url
+                    self.add_fixture(self.base + url, i)
+                elif temp.text == 'Head-to-Head' or len(temp.attrs) != 2:
+                    self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone
             except AttributeError:
                 if len(temp.attrs) != 2:  # 2 is attrs of the table spacer
-                    self.to_scrape.append(i)  # fixture don't have match link - most likely postpone or yet to happen
+                    self.to_scrape.append(i)  # fixture don't have match link - most likely postpone
 
     def scrape_nationalities(self, url: str, _):
         text = connect(url=self.base + url, return_text=True)
