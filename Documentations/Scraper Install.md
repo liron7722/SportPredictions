@@ -4,6 +4,7 @@
     - Python packages
     - MongoDB
     - Ufw
+	- Supervisor
     
 ### Install Process:
 	- Phase 1: Update the packages list and install the prerequisites
@@ -12,6 +13,7 @@
 	- Phase 4: Ufw
 	- Phase 5: Environment variables
 	- Phase 6: Project installation
+	- Phase 7: Supervisor installation
 
 ### Phase 1:  
 	- sudo apt-get update
@@ -21,7 +23,9 @@
 	
 ### Phase 2:  
 	- sudo apt install python3.9
-	- sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+	- sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 2
+		sudo apt remove python3-apt
+		sudo apt install python3-apt
 	- sudo apt install python3-pip
 	- git config --global user.name liron7722
     - git config --global user.email liron7722@gmail.com
@@ -34,11 +38,11 @@
 	- sudo apt-get update
 	- sudo apt-get install -y mongodb-org
 	- echo "mongodb-org hold" | sudo dpkg --set-selections
-    - echo "mongodb-org-server hold" | sudo dpkg --set-selections
-    - echo "mongodb-org-shell hold" | sudo dpkg --set-selections
-    - echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
-    - echo "mongodb-org-tools hold" | sudo dpkg --set-selections
-	- (optional?) system reboot
+	  echo "mongodb-org-server hold" | sudo dpkg --set-selections
+      echo "mongodb-org-shell hold" | sudo dpkg --set-selections
+      echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
+      echo "mongodb-org-tools hold" | sudo dpkg --set-selections
+	- sudo reboot now
 	- sudo systemctl start mongod
 	- sudo systemctl daemon-reload
 	- sudo systemctl status mongod (press q to exit)
@@ -52,8 +56,9 @@
     - sudo ufw allow 27017
     - sudo ufw enable
 	
-### Phase 5:  
-    - look at the seprate file if you have access
+### Phase 5:
+	- sudo nano /etc/environment  
+		look at the seprate file if you have access
     - sudo nano ~/.bashrc
         - alias agi='sudo apt-get install'
         - alias python='python3'
@@ -64,5 +69,24 @@
     - git clone https://github.com/liron7722/SportPredictions
 	- cd SportPredictions
 	- git checkout --track origin/development
-	- pip3 install -r Requirements\scraper_requirements.txt
-	- system reboot 
+	- pip3 install -r Requirements/scraper_requirements.txt
+	- sudo reboot now 
+
+
+### Phase 7:  
+    - sudo apt install supervisor
+	- sudo mkdir -p /var/log/scraper/
+	- sudo touch /var/log/scraper/monitor.err.log
+	- sudo touch /var/log/scraper/monitor.out.log
+	- sudo nano /etc/supervisor/conf.d/monitor.conf
+		[program:ScraperMonitor]
+		directory=/home/ubuntu/SportPredictions/
+		command=python3 /home/ubuntu/SportPredictions/main.py 1
+		user=ubuntu
+		autostart=true
+		autorestart=true
+		stopasgroup=true
+		killasgroup=true
+		stderr_logfile=/var/log/scraper/monitor.err.log
+		stdout_logfile=/var/log/scraper/monitor.out.log
+	- sudo supervisorctl reload
