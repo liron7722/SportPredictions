@@ -44,7 +44,6 @@ class Competition:
         self.log(f'Cmd: add_season\t Url: {url}')
         temp = Season(self.key, url, info)
         temp.scrape()
-        self.log('Finished scrape the season')
         self.seasons.append({index: temp})
 
     # Getters
@@ -100,7 +99,7 @@ class Competition:
                 url = urls[i].contents[0].find('a').get('href')  # Competition url
             try:
                 self.add_season(url=url, info=info, index=i)
-                self.log(f'Season {i}/{len(scrape_list)} successfully scrape at Url: {url}', level=20)
+                self.log(f'Season {i + 1} of {len(scrape_list)} successfully scrape at Url: {url}', level=20)
             except PageNotLoaded:
                 self.log(f'Error accord,\tSeason {i}/{len(scrape_list)} failed scrape at Url: {url}')
                 if i not in self.to_scrape:  # avoiding duplicate
