@@ -1,10 +1,15 @@
 ### Known Bugs:   
+    - Memory (Ram) Overflow?
     - You tell me
     
 ### Coming  Up:
-	- Check db upload
+    - log season scrape time \ competition scrape time 
+    - Save ram memory - Make db upload after every season scrape and then delete it from memory
+    - log errors in log + make script run with all errors
+	- Check db download
 	- check loop scrape work as intended
 	- Complete season test file
+	- Project name + env_type - Environment variables
 
 ### ToDo List:  
 	- ELK 
@@ -28,6 +33,11 @@
 #### update 4#: 
     - Documentions
 	- Requirements File
+	- Bug fix - added support for new head to head history links in fixrues list and in match reports
+    - Bug fix - where Manager or Captian isn't listed
+    - Bug fix - where match don't have match time in scorebox
+    - Bug fix - where match report had only 2 tables on players stats
+    - small improvement in match fixture score box scrape 
 
 #### update 3#:  
     - added scraper scripts for competition and soccer scraper
