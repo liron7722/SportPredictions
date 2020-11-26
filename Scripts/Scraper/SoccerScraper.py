@@ -82,7 +82,7 @@ class SoccerScraper(Scraper):
                 comp.scrape()  # Competition scrape
                 comp.to_json(to_file=True)
             except PageNotLoaded or ParseError:
-                message = f'Error stopped in SoccerScraper script, scrape_competitions method' \
+                message = f'Error stopped in SoccerScraper script, scrape_competitions method\t' \
                           f'Competition Key: {comp.key}'
                 self.logger.exception(message) if self.logger is not None else print(message)
 
