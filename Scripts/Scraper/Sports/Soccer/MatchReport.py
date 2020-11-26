@@ -49,29 +49,27 @@ class MatchReport:
 
             # Managers and Captains
             for index in [4, 6]:  # true location is the location_flag + index
-                values = temp.contents[location_flag + index].text.split(': ')
-                info_dict[key][values[0]] = values[1].replace('\xa0', ' ')
+                if len(temp.contents) > location_flag + index:  # in case we don't have manager or captain listed
+                    values = temp.contents[location_flag + index].text.split(': ')
+                    info_dict[key][values[0]] = values[1].replace('\xa0', ' ')
 
         temp = score_box_soup.contents[5]
-        info_dict['DateTime'] = {
-            'Date': temp.contents[1].contents[0].text,  # Day of the week, Month in str, DD, YYYY
-            'Time': temp.find('span', {'class': 'venuetime'}).text  # HH:MM as Time of the venue
-        }
+        if temp.find('span', {'class': 'venuetime'}) is not None:
+            info_dict['DateTime']['Time'] = temp.find('span', {'class': 'venuetime'}).text  # HH:MM as Time of the venue
+        info_dict['DateTime']['Date'] = temp.contents[1].contents[0].text  # Day of the week, Month in str, DD, YYYY
 
         info_dict['Competition'] = temp.contents[2].text  # Competition
-        optionals_flag = 1 if 'Histor' in temp.contents[3].text else 0  # 'Historical' or 'History'
-        if 'Attendance' in temp.contents[4 + optionals_flag].text:
-            info_dict['Attendance'] = temp.contents[4 + optionals_flag].text.split(': ')[1]  # Attendance
-            optionals_flag += 1
-        info_dict['Venue'] = temp.contents[4 + optionals_flag].text.split(': ')[1]  # Venue
-
-        # Officials
-        for ref in temp.contents[5 + optionals_flag].text.split(': ')[1].split('\xa0· '):
-            values = ref.split(' ')  # split between Name and Position
-            info_dict['Officials'].append({
-                'Name': values[0].replace('\xa0', ' '),  # Officials Name
-                'Position': values[1].replace('(', '').replace(')', '')  # removing braces from Position
-            })
+        # Officials | Venue | Attendance
+        for i in range(3, len(temp.contents)):
+            try:
+                if ": " in temp.contents[i].text:  # may cause AttributeError
+                    values = temp.contents[i].text.split(': ')
+                    if values[0] == 'Officials':
+                        info_dict[values[0]] = self.get_ref_info(values[1])
+                    else:
+                        info_dict[values[0]] = values[1]
+            except AttributeError:
+                continue
 
         for i, key in {7: 'Home Team', 9: 'Away Team'}.items():
             values = list()
@@ -194,18 +192,30 @@ class MatchReport:
                     'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[16]),
                     'Shots stats': self.set_shots_stats(self.df_tables[-1])
             }}
-        else:  # Minor league with less info
-            indexes = [3, 4, 5, 6] if self.register_teams_flag else [1, 2, 3, 4]
+        elif 4 < len(self.df_tables) < 8:  # Minor league with less info
             return {'Home Team': {
-                'Players stats': self.set_players_stats(self.df_tables[indexes[0]]),
-                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[indexes[1]]),
-                'Shots stats': {}
+                'Players stats': self.set_players_stats(self.df_tables[-4]),
+                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-3]),
             },
                 'Away Team': {
-                    'Players stats': self.set_players_stats(self.df_tables[indexes[2]]),
-                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[indexes[3]]),
-                    'Shots stats': {}
+                    'Players stats': self.set_players_stats(self.df_tables[-2]),
+                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-1]),
                 }}
+        elif 1 < len(self.df_tables) < 5:  # old fixture with less info
+            return {'Home Team': {'Players stats': self.set_players_stats(self.df_tables[-2])},
+                    'Away Team': {'Players stats': self.set_players_stats(self.df_tables[-1])}
+                    }
+
+    @staticmethod
+    def get_ref_info(values):  # Officials
+        temp = []
+        for ref in values.split('\xa0· '):
+            info = ref.split(' ')  # split between Name and Position
+            temp.append({
+                'Name': info[0].replace('\xa0', ' '),  # Officials Name
+                'Position': info[1].replace('(', '').replace(')', '')  # removing braces from Position
+            })
+        return temp
 
     @staticmethod
     def change_nan(table):
