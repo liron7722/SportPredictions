@@ -3,9 +3,7 @@
     - You tell me
     
 ### Coming  Up:
-    - log season scrape time \ competition scrape time 
     - Save ram memory - Make db upload after every season scrape and then delete it from memory
-    - log errors in log + make script run with all errors
 	- Check db download
 	- check loop scrape work as intended
 	- Complete season test file
@@ -30,6 +28,11 @@
 
 
 ### Updates:
+#### update 5#: 
+    - added timer wrapper to time script
+    - added timer logs at soccer scraper and competition scripts
+    - added log error in competition script
+
 #### update 4#: 
     - Documentions
 	- Requirements File
@@ -45,7 +48,7 @@
     - added test files for competition
     - Complete Soccer Scraper
     - Main script
-    - add utility script (time)
+    - added utility script (time)
     - Integrate DB (MongoDB)
     - Integrate logger
     - added 2 more tests to season test
