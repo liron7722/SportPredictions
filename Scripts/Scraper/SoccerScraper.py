@@ -3,7 +3,7 @@
 import re
 from Scripts.Utility.db import DB
 from Scripts.Utility.json import save
-from Scripts.Utility.time import call_sleep
+from Scripts.Utility.time import call_sleep, time_wrapper
 from Scripts.Scraper.Scraper import Scraper
 from Scripts.Scraper.Sports.Soccer.Competition import Competition
 from Scripts.Utility.Exceptions import PageNotLoaded, ParseError
@@ -14,7 +14,6 @@ class SoccerScraper(Scraper):
     url = 'https://fbref.com/short/inc/main_nav_menu.json'  # Competitions link
     competitions = []
     db_client = None
-    logger = None
 
     def __init__(self, link: str = None):
         self.url = self.url if link is None else link
@@ -63,11 +62,7 @@ class SoccerScraper(Scraper):
 
     def add_competition(self, key, url: str):
         # Check competition not already added before
-        flag = True
-        for comp in self.competitions:
-            if comp.key == key:
-                flag = False
-                break
+        flag = key in [comp.key for comp in self.competitions]
         if flag and key not in ['2020-2021', '2022']:  # Current and future season, will be scraped in other urls
             self.log(f'Cmd: add_competitions,\tKey: {key},\tUrl: {url}')
             self.competitions.append(
@@ -79,7 +74,7 @@ class SoccerScraper(Scraper):
         self.log(f'Info: Going to scrape {len(self.competitions)} Competitions')
         for comp in self.competitions:
             try:
-                comp.scrape()  # Competition scrape
+                time_wrapper(func=comp.scrape, logger=self.logger)()  # Competition scrape
                 comp.to_json(to_file=True)
             except PageNotLoaded or ParseError:
                 message = f'Error stopped in SoccerScraper script, scrape_competitions method\t' \
@@ -89,7 +84,7 @@ class SoccerScraper(Scraper):
     def scrape(self):
         self.log('Cmd: scrape')
         self.set_competitions(self.r_json)  # competitions from website
-        self.scrape_competitions()  # start scrape
+        time_wrapper(func=self.scrape_competitions, logger=self.logger)()  # start scrape
 
     def get_competitions(self):
         self.log('Cmd: get_competitions')
@@ -152,10 +147,10 @@ class SoccerScraper(Scraper):
         self.log(f'Cmd: run\t'
                  f'Key: {self.key}\t'
                  f'Url: {self.url}')
-        self.load_db()
+        time_wrapper(func=self.load_db, logger=self.logger)()
         while True:
-            self.scrape()
-            self.to_db()
+            time_wrapper(func=self.scrape, logger=self.logger)()
+            time_wrapper(func=self.to_db, logger=self.logger)()
             call_sleep(days=1, logger=self.logger)
 
     def log(self, message: str, level: int = 10):
