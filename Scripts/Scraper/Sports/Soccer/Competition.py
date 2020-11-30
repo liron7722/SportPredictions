@@ -3,6 +3,7 @@
 import pandas as pd
 from bs4 import BeautifulSoup
 from Scripts.Utility.json import save
+from Scripts.Utility.time import time_wrapper
 from Scripts.Utility.requests import connect
 from Scripts.Utility.Exceptions import PageNotLoaded
 from Scripts.Scraper.Sports.Soccer.Season import Season
@@ -40,6 +41,7 @@ class Competition:
                 if len(season['To Scrape']) > 0:
                     self.add_season(season['URL'], season['Basic Info'], len(self.seasons))
 
+    @time_wrapper
     def add_season(self, url: str, info, index: int):
         self.log(f'Cmd: add_season\t Url: {url}')
         temp = Season(self.key, url, info)
@@ -98,10 +100,11 @@ class Competition:
             else:
                 url = urls[i].contents[0].find('a').get('href')  # Competition url
             try:
-                self.add_season(url=url, info=info, index=i)
+                time_wrapper(func=self.add_season, logger=self.logger)(url=url, info=info, index=i)
                 self.log(f'Season {i + 1} of {len(scrape_list)} successfully scrape at Url: {url}', level=20)
             except PageNotLoaded:
-                self.log(f'Error accord,\tSeason {i}/{len(scrape_list)} failed scrape at Url: {url}')
+                message = f'Error accord,\tSeason {i}/{len(scrape_list)} failed scrape at Url: {url}'
+                self.logger.exception(message) if self.logger is not None else print(message)
                 if i not in self.to_scrape:  # avoiding duplicate
                     self.to_scrape.append(i)
         self.scraped_flag = True
@@ -113,7 +116,8 @@ class Competition:
         link = self.get_history_link()
         # check if current position is the history url
         soup = BeautifulSoup(connect(link), "lxml")
-        self.scrape_seasons(soup, self.to_scrape)  # Starting call scrape for each season
+        # Starting call scrape for each season
+        time_wrapper(func=self.scrape_seasons, logger=self.logger)(soup, self.to_scrape)
         self.is_scraped()  # Going throw all season check who didn't scrape
 
     # Results functions
@@ -132,7 +136,7 @@ class Competition:
                  f'Key: {self.key}')
         return self.scraped_flag
 
-    def to_json(self, name: str = None, file: bool = False):
+    def to_json(self, name: str = None, to_file: bool = False):
         self.log(f'Cmd: to_json\t'
                  f'Key: {self.key}\t'
                  f'Url: {self.url}')
@@ -142,7 +146,7 @@ class Competition:
                          },
                 'Seasons': self.get_seasons_as_json()
                 }
-        if file:
+        if to_file:
             name = name if name is not None else f'{self.key}'
             self.log('Cmd: File saving...')
             save(data=data, name=f'{name}.json')
