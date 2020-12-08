@@ -1,17 +1,10 @@
-### Known Bugs:   
-    - Memory (Ram) Overflow?
+### Known Bugs:
     - You tell me
     
 ### Coming  Up:
-    - Save ram memory - Make db upload after every season scrape and then delete it from memory
-	- Check db download
-	- check loop scrape work as intended
-	- Complete season test file
-	- Project name + env_type - Environment variables
 
 ### ToDo List:  
-	- ELK 
-	- Environment variables
+	- ELK
 	- Docker
     - Files struture check up
 	- Data analysis
@@ -28,6 +21,14 @@
 
 
 ### Updates:
+#### update 6#: 
+    - add basic.py to inherit by soccer scripts
+    - improved code structure
+    - add db save support for soccer scripts
+    - Memory improvement - now save season after it been scraped instead of when it all finished
+    - Fixed test scripts after changes
+    - added Environment variables
+    
 #### update 5#: 
     - added timer wrapper to time script
     - added timer logs at soccer scraper and competition scripts
