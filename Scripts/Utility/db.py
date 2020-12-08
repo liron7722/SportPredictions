@@ -1,13 +1,12 @@
 from os import environ
 from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import ServerSelectionTimeoutError, DuplicateKeyError
 
 DB_NAME = 'SPORT_PREDICTION_MONGO_DB_URI'
 
 
 class DB:
     client = None
-    db = None
 
     def __init__(self, key, logger=None):
         self.key = key
@@ -16,7 +15,7 @@ class DB:
 
     def get_connection(self):
         try:
-            db_uri = environ.get(f'{self.key}{DB_NAME}')  # get uri from environment variables
+            db_uri = environ.get(f'{self.key}_{DB_NAME}')  # get uri from environment variables
             self.client = MongoClient(db_uri)  # establish connection
             self.log('db establish connection')
         except ServerSelectionTimeoutError as _:
@@ -37,8 +36,9 @@ class DB:
         return [item for item in collection.find()]
 
     def get_db(self, name: str):
-        self.db = self.client.get_database(name)
+        db = self.client.get_database(name)
         self.log(f'got db: {name}')
+        return db
 
     def get_collection(self, name: str, db):
         collection = db.get_collection(name)
@@ -50,19 +50,24 @@ class DB:
         self.log('insert document to collection')
 
     def update_document(self, collection, fil: dict, data: dict):
-        collection.update_one(fil, {"$set": data})
-        self.log('updated document in collection')
+        try:
+            collection.update_one(fil, {"$set": data})
+            self.log('updated document in the collection')
+        except DuplicateKeyError:
+            self.log('document is already in the collection')
 
-    def is_exist(self, collection, fil: dict):
+    def is_document_exist(self, collection, fil: dict):
         cursor = collection.find(fil)
         try:
             cursor.next()
             flag = True
         except StopIteration:
             flag = False
-        self.log(f'Document {"Not " * flag}exist')
+        self.log(f'Document {"Not " * (not flag)}exist')
         return flag
 
     def log(self, message: str):
         if self.logger is not None:
             self.logger.debug(message)
+        else:
+            print(message)

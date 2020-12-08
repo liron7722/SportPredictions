@@ -1,5 +1,5 @@
 import requests
-from Scripts.Utility.Exceptions import PageNotLoaded
+from Scripts.Utility.exceptions import PageNotLoaded
 
 
 def connect(url, return_text: bool = True, return_json: bool = False):

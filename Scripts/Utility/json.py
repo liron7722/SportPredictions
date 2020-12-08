@@ -3,6 +3,7 @@
 import os
 import json
 import numpy as np
+from Scripts.Utility.path import create_dir
 
 BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}Products{os.sep}"
 
@@ -21,7 +22,8 @@ class NpEncoder(json.JSONEncoder):
 
 def save(data, name: str = None, path: str = None):
     name = 'NoName.json' if name is None else name
-    path = BASE_PATH if path is None else path
+    path = BASE_PATH if path is None else f'{BASE_PATH}{path}{os.sep}'
+    create_dir(path)
     # File output
     with open(path + name, 'w') as outfile:
         json.dump(data, outfile, indent=4, ensure_ascii=True, cls=NpEncoder)
