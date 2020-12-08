@@ -4,28 +4,58 @@ import re
 import pandas as pd
 from functools import reduce
 from bs4 import BeautifulSoup
-from Scripts.Utility.json import save
 from Scripts.Utility.requests import connect
-from Scripts.Utility.Exceptions import ParseError
+from Scripts.Utility.exceptions import ParseError
+from Scripts.Scraper.Sports.Soccer.basic import Basic
 
 
-class MatchReport:
+class MatchReport(Basic):
     score_box = None
     register_teams = None
     events = None
     stats = None
     extra_stats = None
-    dict_tables = None
-    scraped_flag = False
 
     def __init__(self, url: str):
-        self.url = url
+        super().__init__(key=None, url=url)
         text = connect(url=self.url, return_text=True)
         page_text = text.replace('<!--\n', '')  # replace method used to get tables in comments
         self.soup = BeautifulSoup(page_text, "lxml")
         self.df_tables = pd.read_html(str(self.soup))
         self.register_teams_flag = True if len(self.soup.find_all('div', {'id': "field_wrap"})) > 0 else False
 
+    # Getters
+    def get_score_box(self):
+        return self.score_box
+
+    def get_register_teams(self):
+        return self.register_teams
+
+    def get_events(self):
+        return self.events
+
+    def get_stats(self):
+        return self.stats
+
+    def get_extra_stats(self):
+        return self.extra_stats
+
+    def get_dict_tables(self):
+        return self.tables
+
+    def to_json(self):
+        super().to_json()
+        return {
+            'URL': self.url,
+            'Score Box': self.get_score_box(),
+            'Register Teams': self.get_register_teams(),
+            'Events': self.get_events(),
+            'Stats': self.get_stats(),
+            'Extra Stats': self.get_extra_stats(),
+            'Dict Tables': self.get_dict_tables(),
+        }
+
+    # Parsing
     def set_score_box(self):
         score_box_soup = self.soup.find_all('div', {'class': "scorebox"})[0]
         info_dict = {'DateTime': {}, 'Home Team': {}, 'Away Team': {}, 'Officials': []}
@@ -51,7 +81,7 @@ class MatchReport:
             for index in [4, 6]:  # true location is the location_flag + index
                 if len(temp.contents) > location_flag + index:  # in case we don't have manager or captain listed
                     values = temp.contents[location_flag + index].text.split(': ')
-                    info_dict[key][values[0]] = values[1].replace('\xa0', ' ')
+                    info_dict[key][values[0]] = self.ascii_name_fix(values[1])
 
         temp = score_box_soup.contents[5]
         if temp.find('span', {'class': 'venuetime'}) is not None:
@@ -77,7 +107,7 @@ class MatchReport:
             for j in range(1, len(temp.contents), 2):
                 temp_values = temp.contents[j]
                 values.append({
-                    'Event': temp_values.contents[2 if i == 7 else 0].attrs['class'][1],
+                    'Type': temp_values.contents[2 if i == 7 else 0].attrs['class'][1],
                     'Player': temp_values.contents[0 if i == 7 else 2].text,
                     'Minute': int(
                         re.search(r'\d+', temp_values.contents[1 if i == 7 else 3]).group())  # 90+2 => 90
@@ -97,7 +127,7 @@ class MatchReport:
                 player_dict.pop(11)  # removing bench string from the dict at row 11
                 for key, player in player_dict.items():
                     flag = 'Starting' if 0 <= key < 11 else 'Substitute'  # separate players on field or on bench
-                    register_players[flag].append(player)  # adding player name to the list
+                    register_players[flag].append(self.ascii_name_fix(player))  # adding player name to the list
                 register_teams[item] = register_players  # placing player list on the dict
         return register_teams
 
@@ -206,28 +236,15 @@ class MatchReport:
                     'Away Team': {'Players stats': self.set_players_stats(self.df_tables[-1])}
                     }
 
-    @staticmethod
-    def get_ref_info(values):  # Officials
+    def get_ref_info(self, values):  # Officials
         temp = []
         for ref in values.split('\xa0· '):
             info = ref.split(' ')  # split between Name and Position
             temp.append({
-                'Name': info[0].replace('\xa0', ' '),  # Officials Name
+                'Name': self.ascii_name_fix(info[0]),  # Officials Name
                 'Position': info[1].replace('(', '').replace(')', '')  # removing braces from Position
             })
         return temp
-
-    @staticmethod
-    def change_nan(table):
-        return table.where(pd.notnull(table), None)  # Nan to None
-
-    @staticmethod
-    def change_col_name(table):
-        # Given better col name
-        cols = table.columns
-        if type(cols) == pd.core.indexes.multi.MultiIndex:
-            table.columns = [f"{'General' if 'Unnamed' in col[0] else col[0]} - {col[1]}" for col in cols]
-        return table
 
     def set_players_stats(self, tables):
         # combine tables and removing duplicate columns
@@ -258,49 +275,9 @@ class MatchReport:
             self.events = self.set_events()
             self.stats = self.set_stats()
             self.extra_stats = self.set_extra_stats()
-            self.dict_tables = self.set_tables()
+            self.tables = self.set_tables()
             self.scraped_flag = True
         except IndexError:
             raise ParseError(self.url)
         except AttributeError:
             raise ParseError(self.url)
-
-    def get_score_box(self):
-        return self.score_box
-
-    def get_register_teams(self):
-        return self.register_teams
-
-    def get_events(self):
-        return self.events
-
-    def get_stats(self):
-        return self.stats
-
-    def get_extra_stats(self):
-        return self.extra_stats
-
-    def get_dict_tables(self):
-        return self.dict_tables
-
-    def is_scraped(self):
-        return self.scraped_flag
-
-    def to_json(self, name: str = None, to_file: bool = False):
-        data = {
-            'URL': self.url,
-            'Score Box': self.get_score_box(),
-            'Register Teams': self.get_register_teams(),
-            'Events': self.get_events(),
-            'Stats': self.get_stats(),
-            'Extra Stats': self.get_extra_stats(),
-            'Dict Tables': self.get_dict_tables(),
-        }
-
-        if to_file:
-            save(data=data, name=name)
-        else:
-            return data
-
-    def run(self):
-        self.parse()
