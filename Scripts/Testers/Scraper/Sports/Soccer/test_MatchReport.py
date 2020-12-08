@@ -17,22 +17,21 @@ class TestMatchReport(unittest.TestCase):
         cls.expected_results = read(BASE_PATH + result_file)
         cls.links = {
                 # league game - no fans
-                '0.json': 'https://fbref.com/en/matches/bf52349b/Fulham-Arsenal-September-12-2020-Premier-League',
+                '0.json': 'en/matches/bf52349b/Fulham-Arsenal-September-12-2020-Premier-League',
                 # cup game - no extra time
-                '1.json': 'https://fbref.com/en/matches/914e23ed/Brentford-Fulham-August-4-2020-Championship',
+                '1.json': 'en/matches/914e23ed/Brentford-Fulham-August-4-2020-Championship',
                 # cup game with penalties
-                '2.json': 'https://fbref.com/en/matches/1f445267/Arsenal-Liverpool-August-29-2020-FA-Community-Shield',
+                '2.json': 'en/matches/1f445267/Arsenal-Liverpool-August-29-2020-FA-Community-Shield',
                 # league game - weird stats
-                '3.json':
-                'https://fbref.com/en/matches/98b4b5b6/Aston-Villa-Sheffield-United-September-21-2020-Premier-League',
+                '3.json': 'en/matches/98b4b5b6/Aston-Villa-Sheffield-United-September-21-2020-Premier-League',
                 # cup game - with fans
-                '4.json': 'https://fbref.com/en/matches/c9d7e48c/Russia-Saudi-Arabia-June-14-2018-FIFA-World-Cup',
+                '4.json': 'en/matches/c9d7e48c/Russia-Saudi-Arabia-June-14-2018-FIFA-World-Cup',
                 # old event - missing starting players, stats, extra stats
-                '5.json': 'https://fbref.com/en/matches/2bb1b361/Uruguay-Argentina-July-30-1930-FIFA-World-Cup',
+                '5.json': 'en/matches/2bb1b361/Uruguay-Argentina-July-30-1930-FIFA-World-Cup',
             }
         for key, url in cls.links.items():
             cls.mrs[key] = MatchReport(url=url)
-            cls.mrs[key].run()
+            cls.mrs[key].parse()
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -75,9 +74,9 @@ class TestMatchReport(unittest.TestCase):
         for match in self.mrs.values():
             self.assertTrue(match.is_scraped())
 
-    def test_to_json(self):
+    def test_json_to_file(self):
         for key, match in self.mrs.items():
-            match.to_json(name=key, to_file=True)
+            match.to_file(name=key)
 
     @staticmethod
     def start():

@@ -1,5 +1,6 @@
 import os
 import unittest
+from Scripts.Utility.db import DB
 from Scripts.Utility.json import read
 from Scripts.Scraper.Sports.Soccer.Competition import Competition
 
@@ -11,6 +12,7 @@ class TestCompetition(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        cls.db = DB('SOCCER')
         result_file = 'Scripts/Testers/Scraper/Sports/Soccer/testFiles/competition.json'
         cls.expected_results = read(BASE_PATH + result_file)
         cls.links = {
@@ -36,9 +38,14 @@ class TestCompetition(unittest.TestCase):
             else:
                 self.assertNotEqual(0, n)
 
-    def test_to_json(self):
+    def test_to_file(self):
         for key, competition in self.competitions.items():
-            competition.to_json(name=key, to_file=True)
+            competition.to_file(name=key)
+
+    def test_db_save(self):
+        for key, competition in self.competitions.items():
+            competition.add_db(db=self.db)
+            competition.save()
 
     @staticmethod
     def start():
