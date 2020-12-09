@@ -30,7 +30,7 @@ class Season(Basic):
 
     # Preparation functions
     def get_base_info(self):
-        if type(self.base_info) is not dict:  # pd.core.series.Series:  # Ignore
+        if type(self.base_info) is pd.core.series.Series:  # Ignore
             return self.base_info.to_json()
         else:  # already as json because loaded from db
             return self.base_info
@@ -122,6 +122,7 @@ class Season(Basic):
         soup = BeautifulSoup(text, "lxml")
         html_urls = soup.find('tbody').find_all('tr')  # get links of all fixtures
         scrape_list = [j for j in range(len(html_urls))] if len(self.to_scrape) == 0 else self.to_scrape
+        self.log(f'Going to scrape {len(scrape_list)} fixtures')
         for i in scrape_list:
             try:
                 temp = html_urls[i].contents[-2]
@@ -145,14 +146,6 @@ class Season(Basic):
         temp = self.navbar()  # get inner navbar links
         for key, url in temp.items():
             funcs[key](url=self.base + url)  # Ignore or make it based of the key calls
-        self.scraped_status()
-
-    def scraped_status(self):
-        self.scraped_flag = True
-        for fixture in self.fixtures:
-            if fixture.is_scraped() is False:
-                self.scraped_flag = False
-                break
 
     def run(self):
         self.scrape()  # scrape data

@@ -12,7 +12,6 @@ class Basic:
     tables = None
     logger = None
     db_client = None
-    scraped_flag: bool = False
     saved_flag: bool = False
 
     def __init__(self, key, url, logger=None, db=None, path: str = None):
@@ -48,9 +47,6 @@ class Basic:
         self.log('Cmd: File saving...')
         name = name if '.json' in name else f'{name}.json'
         save(data=self.to_json(), name=name, path=self.path)
-
-    def is_scraped(self):
-        return self.scraped_flag
 
     # DB
     def insert_to_db(self, name, collection, data):

@@ -114,6 +114,7 @@ class Competition(Basic):
         df = pd.read_html(str(soup))[0]  # get history full table
         urls = soup.find('tbody').find_all('tr')  # get links of all seasons
         scrape_list = [j for j in range(len(urls))] if len(scrape_list) == 0 else scrape_list
+        self.to_scrape = []  # reset scrape list
         self.log(f'Info: Going to scrape {len(scrape_list)} Seasons')
         for i in scrape_list:
             info = df.iloc[i]  # general information
@@ -127,12 +128,11 @@ class Competition(Basic):
             try:
                 time_wrapper(func=self.add_season, logger=self.logger)(url=url, info=info)
                 self.log(f'Season {i + 1} of {len(scrape_list)} successfully scrape at Url: {url}', level=20)
-            except PageNotLoaded:
+            except PageNotLoaded and AttributeError and IndexError:
                 message = f'Error accord,\tSeason {i}/{len(scrape_list)} failed scrape at Url: {url}'
                 self.logger.exception(message) if self.logger is not None else print(message)
                 if i not in self.to_scrape:  # avoiding duplicate
                     self.to_scrape.append(i)
-        self.scraped_flag = True  # TODO: relevant?
 
     def scrape(self):
         self.log(f'Cmd: scrape\t'
@@ -142,18 +142,6 @@ class Competition(Basic):
         soup = BeautifulSoup(connect(link), "lxml")
         # Starting call scrape for each season
         time_wrapper(func=self.scrape_seasons, logger=self.logger)(soup, self.to_scrape)
-        # self.is_scraped()  # Going throw all season check who didn't scrape   # TODO Decide what to do with this
-
-    # Results functions
-    def is_scraped(self):
-        self.log(f'Cmd: is_scraped')
-        for season in self.seasons:
-            if season.is_scraped() is False:
-                self.log(f'{season.key} scrape status: Incomplete')
-                self.scraped_flag = False
-        self.log(f'Competition scrape status: {"In" * (not self.scraped_flag)}Complete\t'
-                 f'Key: {self.key}')
-        return self.scraped_flag
 
     def run(self):
         self.load_db()  # load data to know what left to scrape
