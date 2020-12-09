@@ -24,6 +24,7 @@ def save(data, name: str = None, path: str = None):
     name = 'NoName.json' if name is None else name
     path = BASE_PATH if path is None else f'{BASE_PATH}{path}{os.sep}'
     create_dir(path)
+    print(f'File was save with the the name: {name} , on the path: {path}')
     # File output
     with open(path + name, 'w') as outfile:
         json.dump(data, outfile, indent=4, ensure_ascii=True, cls=NpEncoder)
