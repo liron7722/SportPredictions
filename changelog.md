@@ -2,6 +2,7 @@
     - You tell me
     
 ### Coming  Up:
+    - add support for higher sized documents for seasons with a lot of fixtures
 
 ### ToDo List:  
 	- ELK
@@ -28,6 +29,10 @@
     - Memory improvement - now save season after it been scraped instead of when it all finished
     - Fixed test scripts after changes
     - added Environment variables
+    - Now scrape all of the competition seasons befor moving to the next competition
+    - removed scraped flag
+    - fixed an issue where scrape list of fixtures won't update properly
+
     
 #### update 5#: 
     - added timer wrapper to time script
