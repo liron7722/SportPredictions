@@ -94,11 +94,15 @@ class Competition(Basic):
         if url not in self.seasons_urls:  # add new season or un finished scraped season
             self.log(f'Added season')
             self.seasons_urls.append(url)
-            temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path)
-            temp.to_scrape = [] if to_scrape is None else to_scrape
-            temp.run()
-            if is_there_free_memory():  # save to memory
-                self.seasons.append(temp)
+            try:
+                temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path)
+                temp.to_scrape = [] if to_scrape is None else to_scrape
+                temp.run()
+                if is_there_free_memory():  # save to memory
+                    self.seasons.append(temp)
+            except:  # catch new error to handle with
+                self.log(f'New Error')
+                self.logger.exception()
         else:  # season was loaded from db
             self.log(f'Already added')
 
