@@ -27,6 +27,7 @@
 		sudo apt remove python3-apt
 		sudo apt install python3-apt
 	- sudo apt install python3-pip
+	- sudo apt install python3-venv
 	- git config --global user.name liron7722
     - git config --global user.email liron7722@gmail.com
 	
@@ -57,7 +58,7 @@
     - sudo ufw enable
 	
 ### Phase 5:
-	- sudo nano /etc/environment  
+	- sudo nano /etc/environment
 		look at the seprate file if you have access
     - sudo nano ~/.bashrc
         - alias agi='sudo apt-get install'
@@ -69,6 +70,7 @@
     - git clone https://github.com/liron7722/SportPredictions
 	- cd SportPredictions
 	- git checkout --track origin/development
+	- python3 -m venv venv
 	- pip3 install -r Requirements/scraper_requirements.txt
 	- sudo reboot now 
 
@@ -90,3 +92,9 @@
 		stderr_logfile=/var/log/scraper/monitor.err.log
 		stdout_logfile=/var/log/scraper/monitor.out.log
 	- sudo supervisorctl reload
+
+
+	### Phase 8:  
+		- ssh-keygen -t rsa -b 4096 -C "revahliron@gmail.com"
+			press enter twice
+		- ssh-copy-id remote_username@server_ip_address
