@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import os
 import json
 import numpy as np
+from os import sep, path as os_path
 from Scripts.Utility.path import create_dir
 
-BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}Products{os.sep}"
+BASE_PATH = f"{os_path.dirname(os_path.realpath(''))}{sep}SportPredictions{sep}Products{sep}"
 
 
 class NpEncoder(json.JSONEncoder):
@@ -22,7 +22,7 @@ class NpEncoder(json.JSONEncoder):
 
 def save(data, name: str = None, path: str = None):
     name = 'NoName.json' if name is None else name
-    path = BASE_PATH if path is None else f'{BASE_PATH}{path}{os.sep}'
+    path = BASE_PATH if path is None else f'{BASE_PATH}{path}{sep}'
     create_dir(path)
     print(f'File was save with the the name: {name} , on the path: {path}')
     # File output
