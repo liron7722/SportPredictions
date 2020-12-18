@@ -100,10 +100,13 @@ class Season(Basic):
         temp = self.soup.find_all('ul', {'class': "hoversmooth"})[1]  # navbar html
         values = temp.find_all('li', {'class': "full"})
         for val in values:
+            url = val.find('a').get('href')
             if 'Fixtures' in val.find('a').get('href'):
-                res['Fixtures'] = val.find('a').get('href').removeprefix('/')
+                res['Fixtures'] = url[1:] if url[0] == '/' else url  # python3.8
+                # res['Fixtures'] = url.removeprefix('/')  # python3.9
             elif 'Nationalities' in val.find('a').get('href'):
-                res['Nationalities'] = val.find('a').get('href').removeprefix('/')
+                res['Nationalities'] = url[1:] if url[0] == '/' else url  # python3.8
+                # res['Nationalities'] = url.removeprefix('/')  # python3.9
         return res
 
     def add_fixture(self, url: str):
@@ -132,7 +135,9 @@ class Season(Basic):
                 continue
             try:
                 if temp.text == 'Match Report':
-                    url = temp.find('a').get('href').removeprefix('/')  # Fixture url
+                    url = temp.find('a').get('href')  # Fixture url
+                    url = url[1:] if url[0] == '/' else url  # python3.8
+                    # url = url.removeprefix('/')   # python3.9
                     self.add_fixture(url)
                 elif temp.text == 'Head-to-Head' or len(temp.attrs) != 2:
                     self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone

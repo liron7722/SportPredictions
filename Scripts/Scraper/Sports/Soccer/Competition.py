@@ -101,8 +101,7 @@ class Competition(Basic):
                 if is_there_free_memory():  # save to memory
                     self.seasons.append(temp)
             except:  # catch new error to handle with
-                self.log(f'New Error')
-                self.logger.exception()
+                self.logger.exception('New Error')
         else:  # season was loaded from db
             self.log(f'Already added')
 
@@ -110,7 +109,9 @@ class Competition(Basic):
         self.log(f'Cmd: get_history_link')
         temp = self.soup.find_all('ul', {'class': "hoversmooth"})[1]  # navbar html
         # navbar index (history) url
-        index_url = temp.find('li', {'class': "index"}).find('a').get('href').removeprefix('/')
+        url = temp.find('li', {'class': "index"}).find('a').get('href')
+        index_url = url[1:] if url[0] == '/' else url  # python3.8
+        # index_url = url.removeprefix('/')  # python3.9+
         return self.base + index_url
 
     def scrape_seasons(self, soup: BeautifulSoup, scrape_list: list):
