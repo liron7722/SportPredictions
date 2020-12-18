@@ -137,4 +137,9 @@ dmypy.json
 Example.png
 Environment variables.txt
 
+<<<<<<< HEAD
 Products/
+=======
+# Products
+Products
+>>>>>>> improve-log
