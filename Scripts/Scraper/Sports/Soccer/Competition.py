@@ -3,10 +3,12 @@
 # Utility
 import pandas as pd
 from bs4 import BeautifulSoup
+from Scripts.Utility.path import get_files, sep
 from Scripts.Utility.time import time_wrapper
 from Scripts.Utility.requests import connect
 from Scripts.Utility.exceptions import PageNotLoaded
 from Scripts.Utility.resources import is_there_free_memory
+from Scripts.Utility.json import read, BASE_PATH as PRODUCT_PATH
 # Scrape
 from Scripts.Scraper.Sports.Soccer.basic import Basic
 from Scripts.Scraper.Sports.Soccer.Season import Season
@@ -35,24 +37,44 @@ class Competition(Basic):
         else:
             return [[table.iloc[i].to_json() for i in range(len(table))] for table in self.tables]
 
-    # DB Load
-    def load_seasons(self, db, name='Seasons'):
-        collection = self.db_client.get_collection(name=name, db=db)
-        for season in collection.find({}):
+    # Load
+    def load_seasons(self, season_list):
+        self.log(f'Cmd: load_seasons')
+        for season in season_list:
             url = season['URL'].replace(self.base, '')
             if len(season['To Scrape']) > 0:
                 self.add_season(url, season['Basic Info'])
             else:
                 self.seasons_urls.append(url)
 
-    def load_db(self):
+    # Local load
+    def load_files(self, name):
+        self.log(f'Cmd: load_files')
+        season_list = list()
+        path = f'{PRODUCT_PATH}{name}{sep}'
+        for file in get_files(folder_path=path):
+            data = dict()
+            temp = read(file)
+            for key in ['URL', 'To Scrape', 'Basic Info']:
+                data[key] = temp[key]
+            season_list.append(data)
+        self.load_seasons(season_list=season_list)
+
+    # DB Load
+    def load_db(self, name):
         self.log(f'Cmd: load_db')
-        if self.db_client is not None:  # db load
-            name = self.get_name()
-            db = self.db_client.get_db(name=name)
-            self.load_seasons(db=db)
-        else:
-            self.log(f'Nothing to load')
+        db = self.db_client.get_db(name=name)  # get db
+        collection = self.db_client.get_collection(name='Seasons', db=db)  # get collection
+        season_list = collection.find({})  # get seasons
+        self.load_seasons(season_list=season_list)
+
+    def load(self):
+        self.log(f'Cmd: load')
+        name = self.get_name()
+        if self.db_client is not None:  # load data from db
+            self.load_db(name=name)
+        else:  # load data from local files
+            self.load_files(name=name)
 
     # DB Save
     def to_db(self, db, name="Info"):
@@ -149,6 +171,6 @@ class Competition(Basic):
         time_wrapper(func=self.scrape_seasons, logger=self.logger)(soup, self.to_scrape)
 
     def run(self):
-        self.load_db()  # load data to know what left to scrape
+        self.load()  # load data to know what left to scrape
         self.scrape()  # scrape data
         self.save()  # save data
