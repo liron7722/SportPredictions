@@ -9,13 +9,14 @@ from Scripts.Scraper.Sports.Soccer.MatchReport import MatchReport
 
 
 class Season(Basic):
-    to_scrape = []
-    fixtures: list = []
-    nationalities: pd.DataFrame = None
-
     def __init__(self, key, url, info, logger=None, db=None, path: str = None):
+        # initialize
         super().__init__(url=url, key=key, logger=logger, db=db, path=path)
         self.base_info = info
+        self.fixtures = list()
+        self.to_scrape = list()
+        self.nationalities = None
+        # connect and parse
         text = connect(url=self.url, return_text=True)
         page_text = text.replace('<!--\n', '')  # replace used to get tables in comments but do appear on the site
         self.soup = BeautifulSoup(page_text, "lxml")
@@ -30,7 +31,7 @@ class Season(Basic):
 
     # Preparation functions
     def get_base_info(self):
-        if type(self.base_info) is pd.core.series.Series:  # Ignore
+        if type(self.base_info) in [pd.core.series.Series, pd.core.frame.DataFrame]:  # Ignore warnings
             return self.base_info.to_json()
         else:  # already as json because loaded from db
             return self.base_info
@@ -101,12 +102,10 @@ class Season(Basic):
         values = temp.find_all('li', {'class': "full"})
         for val in values:
             url = val.find('a').get('href')
-            if 'Fixtures' in val.find('a').get('href'):
-                res['Fixtures'] = url[1:] if url[0] == '/' else url  # python3.8
-                # res['Fixtures'] = url.removeprefix('/')  # python3.9
-            elif 'Nationalities' in val.find('a').get('href'):
-                res['Nationalities'] = url[1:] if url[0] == '/' else url  # python3.8
-                # res['Nationalities'] = url.removeprefix('/')  # python3.9
+            if 'Fixtures' in url:
+                res['Fixtures'] = self.extract_url(url)
+            elif 'Nationalities' in url:
+                res['Nationalities'] = self.extract_url(url)
         return res
 
     def add_fixture(self, url: str):
@@ -135,9 +134,7 @@ class Season(Basic):
                 continue
             try:
                 if temp.text == 'Match Report':
-                    url = temp.find('a').get('href')  # Fixture url
-                    url = url[1:] if url[0] == '/' else url  # python3.8
-                    # url = url.removeprefix('/')   # python3.9
+                    url = self.extract_url(temp.find('a').get('href'))  # Fixture url
                     self.add_fixture(url)
                 elif temp.text == 'Head-to-Head' or len(temp.attrs) != 2:
                     self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone

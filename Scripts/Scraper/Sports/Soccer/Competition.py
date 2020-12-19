@@ -15,14 +15,15 @@ from Scripts.Scraper.Sports.Soccer.Season import Season
 
 
 class Competition(Basic):
-    tables = None
-    seasons: list = []
-    seasons_urls: list = []
-    to_scrape: list = []
-
     def __init__(self, key, url, logger=None, db=None):
+        # Initialize
         super().__init__(url=url, key=key, logger=logger, db=db)
+        self.tables = None
+        self.seasons = list()
+        self.seasons_urls = list()
+        self.to_scrape = list()
         self.log(f'Competition Initialize with Key: {key},\tUrl: {url}')
+        # connect and parse
         r_text = connect(url=self.url)
         page_text = r_text.replace('<!--\n', '')
         self.soup = BeautifulSoup(page_text, "lxml")
@@ -89,15 +90,14 @@ class Competition(Basic):
         else:
             self.insert_to_db(name, collection=collection, data=data)
 
-    def season_to_db(self):
+    def seasons_to_db(self):
         self.log('Cmd: save')
         for season in self.seasons:
             if season.saved_flag is False:
                 season.save()
 
     def save(self):
-        self.season_to_db()
-        super().save()
+        self.seasons_to_db()
 
     # Json
     def to_json(self):
@@ -132,9 +132,7 @@ class Competition(Basic):
         temp = self.soup.find_all('ul', {'class': "hoversmooth"})[1]  # navbar html
         # navbar index (history) url
         url = temp.find('li', {'class': "index"}).find('a').get('href')
-        index_url = url[1:] if url[0] == '/' else url  # python3.8
-        # index_url = url.removeprefix('/')  # python3.9+
-        return self.base + index_url
+        return self.base + self.extract_url(url)
 
     def scrape_seasons(self, soup: BeautifulSoup, scrape_list: list):
         self.log(f'Cmd: scrape_seasons')
@@ -151,7 +149,7 @@ class Competition(Basic):
                 continue
             else:
                 url = urls[i].contents[0].find('a').get('href')  # Competition url
-
+                url = self.extract_url(url)
             try:
                 time_wrapper(func=self.add_season, logger=self.logger)(url=url, info=info)
                 self.log(f'Season {i + 1} of {len(scrape_list)} successfully scrape at Url: {url}', level=20)

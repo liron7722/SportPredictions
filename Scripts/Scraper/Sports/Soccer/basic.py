@@ -2,25 +2,24 @@ import pandas as pd
 from os import environ
 from Scripts.Utility.json import save
 
+ENV = environ.get(f'SOCCER_SCRAPER_ENV')
+ENV = ENV if ENV in ['Production', 'Development'] else 'Development'
+
 
 class Basic:
-    ENV = 'Development'
     base: str = 'https://fbref.com/'  # main url
-    key: str = None
-    url: str = None
     path: str = None
-    tables = None
     logger = None
     db_client = None
-    saved_flag: bool = False
 
     def __init__(self, key, url, logger=None, db=None, path: str = None):
         self.key = key
         self.url = self.base + url
+        self.tables = None
+        self.saved_flag = False
         self.add_db(db=db)
         self.add_logger(logger=logger)
         self.add_path(path=path)
-        self.ENV = environ.get(f'SOCCER_SCRAPER_ENV')
 
     # Setters
     def add_logger(self, logger):
@@ -36,9 +35,9 @@ class Basic:
     def log(self, message: str, level: int = None):
         if self.logger is not None:
             if level is None:
-                if self.ENV == 'Development':
+                if ENV == 'Development':
                     level = 10
-                elif self.ENV == 'Production':
+                elif ENV == 'Production':
                     level = 20
             self.logger.log(level, message)
 
@@ -91,3 +90,8 @@ class Basic:
         if type(cols) == pd.core.indexes.multi.MultiIndex:
             table.columns = [f"{'General' if 'Unnamed' in col[0] else col[0]} - {col[1]}" for col in cols]
         return table
+
+    @staticmethod
+    def extract_url(url):
+        return url[1:] if url[0] == '/' else url  # python3.8
+        # return url.removeprefix('/')  # python3.9+
