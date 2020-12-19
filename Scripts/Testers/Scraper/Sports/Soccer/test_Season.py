@@ -3,6 +3,7 @@ import unittest
 import pandas as pd
 from Scripts.Utility.db import DB
 from Scripts.Utility.json import read
+from Scripts.Utility.logger import Logger
 from Scripts.Scraper.Sports.Soccer.Season import Season
 
 BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}"
@@ -15,6 +16,7 @@ class TestSeason(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.db = DB('SOCCER')
+        logger = Logger(f'Season Test.log').get_logger()
         result_file = 'Scripts/Testers/Scraper/Sports/Soccer/testFiles/season.json'
         cls.expected_results = read(BASE_PATH + result_file)
         cls.links = {
@@ -23,7 +25,7 @@ class TestSeason(unittest.TestCase):
         }
         info = pd.DataFrame([[1, 2]], columns=list('AB'))  # Dummy data
         for key, url in cls.links.items():
-            cls.seasons[key] = Season(key=key, url=url, info=info)
+            cls.seasons[key] = Season(key=key, url=url, info=info, logger=logger)
             cls.seasons[key].scrape()
 
     @classmethod
@@ -44,14 +46,6 @@ class TestSeason(unittest.TestCase):
     def test_results(self):
         for key, season in self.seasons.items():
             self.assertEqual(season.to_json(), self.expected_results[key])
-
-    def test_is_scraped(self):
-        for season in self.seasons.values():
-            n = len(season.to_scrape)
-            if season.is_scraped():
-                self.assertEqual(0, n)
-            else:
-                self.assertNotEqual(0, n)
 
     def test_json_to_file(self):
         for key, season in self.seasons.items():

@@ -2,6 +2,7 @@ import os
 import unittest
 from Scripts.Utility.db import DB
 from Scripts.Utility.json import read
+from Scripts.Utility.logger import Logger
 from Scripts.Scraper.Sports.Soccer.Competition import Competition
 
 BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}"
@@ -13,6 +14,7 @@ class TestCompetition(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.db = DB('SOCCER')
+        logger = Logger(f'Season Test.log').get_logger()
         result_file = 'Scripts/Testers/Scraper/Sports/Soccer/testFiles/competition.json'
         cls.expected_results = read(BASE_PATH + result_file)
         cls.links = {
@@ -20,7 +22,7 @@ class TestCompetition(unittest.TestCase):
             # '101.json': 'en/comps/1/history/World-Cup-Seasons',  # History link of a tournament
         }
         for key, url in cls.links.items():
-            cls.competitions[key] = Competition(key=key, url=url)
+            cls.competitions[key] = Competition(key=key, url=url, logger=logger)
             cls.competitions[key].run()
 
     @classmethod
