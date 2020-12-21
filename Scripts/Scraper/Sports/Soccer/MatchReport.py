@@ -24,35 +24,16 @@ class MatchReport(Basic):
         self.df_tables = pd.read_html(str(self.soup))
         self.register_teams_flag = True if len(self.soup.find_all('div', {'id': "field_wrap"})) > 0 else False
 
-    # Getters
-    def get_score_box(self):
-        return self.score_box
-
-    def get_register_teams(self):
-        return self.register_teams
-
-    def get_events(self):
-        return self.events
-
-    def get_stats(self):
-        return self.stats
-
-    def get_extra_stats(self):
-        return self.extra_stats
-
-    def get_dict_tables(self):
-        return self.tables
-
     def to_json(self):
         super().to_json()
         return {
             'URL': self.url,
-            'Score Box': self.get_score_box(),
-            'Register Teams': self.get_register_teams(),
-            'Events': self.get_events(),
-            'Stats': self.get_stats(),
-            'Extra Stats': self.get_extra_stats(),
-            'Dict Tables': self.get_dict_tables(),
+            'Score Box': self.score_box,
+            'Register Teams': self.register_teams,
+            'Events': self.events,
+            'Stats': self.stats,
+            'Extra Stats': self.extra_stats,
+            'Dict Tables': self.tables,
         }
 
     # Parsing
@@ -141,25 +122,26 @@ class MatchReport(Basic):
                 except AttributeError:  # first line don't have text attribute
                     continue
 
-        events_soup = self.soup.find_all('div', {'id': "events_wrap"})[0]
         headers = ['Half Time', 'Full Time', 'Penalty Shootout']
         event_dict = {'First Half': [], 'Half Time': [], 'Full Time': [], 'Penalty Shootout': []}
-        start_index = get_start_index(events_soup.contents[1].contents)
-        key = 'First Half'
-        for i in range(start_index, len(events_soup.contents[1].contents), 2):
-            temp = events_soup.contents[1].contents[i]
-            if temp.text in headers:
-                key = headers.pop(0)
-                continue
-            else:
-                time_value = re.findall(r'\d+', temp.contents[1].contents[0])
-                event_dict[key].append({
-                    'Minute': time_value[0] if len(time_value) == 1
-                    else {'Minute': time_value[0], 'Added Time': time_value[1]},
-                    'Scoreboard': temp.contents[1].contents[2].text,
-                    'Event': temp.contents[3].contents[1].attrs['class'][1],
-                    'Player': temp.contents[3].contents[3].contents[1].contents[1].text
-                })
+        events_soup = self.soup.find_all('div', {'id': "events_wrap"})
+        if len(events_soup) > 0:
+            events_soup = events_soup[0]
+            start_index = get_start_index(events_soup.contents[1].contents)
+            key = 'First Half'
+            for i in range(start_index, len(events_soup.contents[1].contents), 2):
+                temp = events_soup.contents[1].contents[i]
+                if temp.text in headers:
+                    key = headers.pop(0)
+                else:
+                    time_value = re.findall(r'\d+', temp.contents[1].contents[0])
+                    event_dict[key].append({
+                        'Minute': time_value[0] if len(time_value) == 1
+                        else {'Minute': time_value[0], 'Added Time': time_value[1]},
+                        'Scoreboard': temp.contents[1].contents[2].text,
+                        'Event': temp.contents[3].contents[1].attrs['class'][1],
+                        'Player': temp.contents[3].contents[3].contents[1].contents[1].text
+                    })
 
         return event_dict
 
@@ -237,13 +219,14 @@ class MatchReport(Basic):
                     }
 
     def get_ref_info(self, values):  # Officials
-        temp = []
-        for ref in values.split('\xa0· '):
-            info = ref.split(' ')  # split between Name and Position
-            temp.append({
-                'Name': self.ascii_name_fix(info[0]),  # Officials Name
-                'Position': info[1].replace('(', '').replace(')', '')  # removing braces from Position
-            })
+        temp = list()
+        if len(values) > 0:
+            for ref in values.split('\xa0· '):
+                info = ref.split(' ')  # split between Name and Position
+                temp.append({
+                    'Name': self.ascii_name_fix(info[0]),  # Officials Name
+                    'Position': info[1].replace('(', '').replace(')', '')  # removing braces from Position
+                })
         return temp
 
     def set_players_stats(self, tables):
@@ -276,7 +259,6 @@ class MatchReport(Basic):
             self.stats = self.set_stats()
             self.extra_stats = self.set_extra_stats()
             self.tables = self.set_tables()
-            self.scraped_flag = True
         except IndexError:
             raise ParseError(self.url)
         except AttributeError:
