@@ -1,4 +1,5 @@
 ### Known Bugs:
+    - MemoryError ?
     - You tell me
     
 ### Coming  Up:
@@ -22,6 +23,16 @@
 
 
 ### Updates:
+#### update 7#:
+    - added support for python 3.8
+    - reorganized the data in the mongoDB in order to not get files above 16MB
+    - no longer download season data that was downloaded before
+    - added logger to test scripts
+    - changed classes static variables in order to avoid data leak between classes
+    - match fixture bugs fix
+    - minor improvements in utility scripts
+    - added retry option when trying to get a url in case of a bad status code
+
 #### update 6#: 
     - add basic.py to inherit by soccer scripts
     - improved code structure
