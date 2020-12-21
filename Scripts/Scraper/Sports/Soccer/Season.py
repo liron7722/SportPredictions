@@ -133,11 +133,11 @@ class Season(Basic):
                 self.logger.exception(message) if self.logger is not None else print(message)
                 continue
             try:
-                if temp.text == 'Match Report':
+                if html_urls[i].contents[-1] == 'Match Cancelled' or temp.text == 'Head-to-Head' or len(temp.attrs) != 2:
+                    self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone or cancelled
+                elif temp.text == 'Match Report':
                     url = self.extract_url(temp.find('a').get('href'))  # Fixture url
                     self.add_fixture(url)
-                elif temp.text == 'Head-to-Head' or len(temp.attrs) != 2:
-                    self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone
             except AttributeError:
                 if len(temp.attrs) != 2:  # 2 is attrs of the table spacer
                     self.to_scrape.append(i)  # fixture don't have match link - most likely postpone

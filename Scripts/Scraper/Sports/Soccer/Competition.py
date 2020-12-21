@@ -116,14 +116,14 @@ class Competition(Basic):
         if url not in self.seasons_urls:  # add new season or un finished scraped season
             self.log(f'Added season')
             self.seasons_urls.append(url)
-            try:
-                temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path)
-                temp.to_scrape = [] if to_scrape is None else to_scrape
-                temp.run()
-                if is_there_free_memory():  # save to memory
-                    self.seasons.append(temp)
-            except:  # catch new error to handle with
-                self.logger.exception('New Error')
+
+            temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path)
+            temp.to_scrape = [] if to_scrape is None else to_scrape
+            temp.run()
+
+            if is_there_free_memory():  # save to memory
+                self.seasons.append(temp)
+
         else:  # season was loaded from db
             self.log(f'Already added')
 
@@ -153,7 +153,7 @@ class Competition(Basic):
             try:
                 time_wrapper(func=self.add_season, logger=self.logger)(url=url, info=info)
                 self.log(f'Season {i + 1} of {len(scrape_list)} successfully scrape at Url: {url}', level=20)
-            except PageNotLoaded and AttributeError and IndexError:
+            except PageNotLoaded and AttributeError and IndexError and Exception:
                 message = f'Error accord,\tSeason {i}/{len(scrape_list)} failed scrape at Url: {url}'
                 self.logger.exception(message) if self.logger is not None else print(message)
                 if i not in self.to_scrape:  # avoiding duplicate
