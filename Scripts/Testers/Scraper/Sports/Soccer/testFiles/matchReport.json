@@ -2050,5 +2050,80 @@
                 "Goalkeeper stats": "{\"General - Player\":{\"0\":\"Juan Botasso\"},\"General - Age\":{\"0\":\"21-280\"},\"General - Min\":{\"0\":90},\"Shot Stopping - SoTA\":{\"0\":null},\"Shot Stopping - GA\":{\"0\":null},\"Shot Stopping - Saves\":{\"0\":null},\"Shot Stopping - Save%\":{\"0\":null}}"
             }
         }
+    },
+    "6.json": {
+        "URL": "https://fbref.com/en/matches/c2c232d7/Shandong-Luneng-Taishan-Harbin-Yiteng-March-7-2014-Super-League",
+        "Score Box": {
+            "DateTime": {
+                "Time": "19:00 (venue time)",
+                "Date": "Friday March 7, 2014"
+            },
+            "Home Team": {
+                "Name": "Shandong Luneng Taishan",
+                "Goals": "1",
+                "W_D_L": {
+                    "Wins": "1",
+                    "Draws": "0",
+                    "Losses": "0"
+                },
+                "Events": []
+            },
+            "Away Team": {
+                "Name": "Harbin Yiteng",
+                "Goals": "0",
+                "W_D_L": {
+                    "Wins": "0",
+                    "Draws": "0",
+                    "Losses": "1"
+                },
+                "Events": []
+            },
+            "Officials": [],
+            "Competition": "Chinese Super League (Matchweek 1)"
+        },
+        "Register Teams": {
+            "Home Team": {},
+            "Away Team": {}
+        },
+        "Events": {
+            "First Half": [],
+            "Half Time": [],
+            "Full Time": [],
+            "Penalty Shootout": []
+        },
+        "Stats": {
+            "Home Team": {
+                "Name": "Shandong Lunen",
+                "Cards": {
+                    "Yellow": 0,
+                    "Red": 0
+                }
+            },
+            "Away Team": {
+                "Name": "Harbin Yiteng",
+                "Cards": {
+                    "Yellow": 0,
+                    "Red": 0
+                }
+            }
+        },
+        "Extra Stats": {
+            "Home Team": {},
+            "Away Team": {}
+        },
+        "Dict Tables": {
+            "Home Team": {
+                "Players stats": {
+                    "Total": "{\"General - Player\":\"0 Players\",\"General - #\":null,\"General - Nation\":null,\"General - Pos\":null,\"General - Age\":null,\"General - Min\":null,\"Performance - Gls\":null,\"Performance - Ast\":null,\"Performance - PK\":null,\"Performance - PKatt\":null,\"Performance - Sh\":null,\"Performance - SoT\":null,\"Performance - CrdY\":null,\"Performance - CrdR\":null,\"Performance - Fls\":null,\"Performance - Fld\":null,\"Performance - Off\":null,\"Performance - Crs\":null,\"Performance - TklW\":null,\"Performance - Int\":null,\"Performance - OG\":null,\"Performance - PKwon\":null,\"Performance - PKcon\":null}",
+                    "Players": []
+                }
+            },
+            "Away Team": {
+                "Players stats": {
+                    "Total": "{\"General - Player\":\"0 Players\",\"General - #\":null,\"General - Nation\":null,\"General - Pos\":null,\"General - Age\":null,\"General - Min\":null,\"Performance - Gls\":null,\"Performance - Ast\":null,\"Performance - PK\":null,\"Performance - PKatt\":null,\"Performance - Sh\":null,\"Performance - SoT\":null,\"Performance - CrdY\":null,\"Performance - CrdR\":null,\"Performance - Fls\":null,\"Performance - Fld\":null,\"Performance - Off\":null,\"Performance - Crs\":null,\"Performance - TklW\":null,\"Performance - Int\":null,\"Performance - OG\":null,\"Performance - PKwon\":null,\"Performance - PKcon\":null}",
+                    "Players": []
+                }
+            }
+        }
     }
 }

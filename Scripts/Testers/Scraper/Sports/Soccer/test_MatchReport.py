@@ -28,6 +28,8 @@ class TestMatchReport(unittest.TestCase):
                 '4.json': 'en/matches/c9d7e48c/Russia-Saudi-Arabia-June-14-2018-FIFA-World-Cup',
                 # old event - missing starting players, stats, extra stats
                 '5.json': 'en/matches/2bb1b361/Uruguay-Argentina-July-30-1930-FIFA-World-Cup',
+                # low details event - missing starting players, events, stats, extra stats, tables, referees
+                '6.json': 'en/matches/c2c232d7/Shandong-Luneng-Taishan-Harbin-Yiteng-March-7-2014-Super-League',
             }
         for key, url in cls.links.items():
             cls.mrs[key] = MatchReport(url=url)
@@ -43,36 +45,32 @@ class TestMatchReport(unittest.TestCase):
     def test_get_score_box(self):
         func_key = 'Score Box'
         for key, match in self.mrs.items():
-            self.assertEqual(self.mrs[key].get_score_box(), self.expected_results[key][func_key])
+            self.assertEqual(self.mrs[key].score_box, self.expected_results[key][func_key])
 
     def test_get_register_teams(self):
         func_key = 'Register Teams'
         for key, match in self.mrs.items():
-            self.assertEqual(self.mrs[key].get_register_teams(), self.expected_results[key][func_key])
+            self.assertEqual(self.mrs[key].register_teams, self.expected_results[key][func_key])
 
     def test_get_events(self):
         func_key = 'Events'
         for key, match in self.mrs.items():
-            self.assertEqual(self.mrs[key].get_events(), self.expected_results[key][func_key])
+            self.assertEqual(self.mrs[key].events, self.expected_results[key][func_key])
 
     def test_get_stats(self):
         func_key = 'Stats'
         for key, match in self.mrs.items():
-            self.assertEqual(self.mrs[key].get_stats(), self.expected_results[key][func_key])
+            self.assertEqual(self.mrs[key].stats, self.expected_results[key][func_key])
 
     def test_get_extra_stats(self):
         func_key = 'Extra Stats'
         for key, match in self.mrs.items():
-            self.assertEqual(self.mrs[key].get_extra_stats(), self.expected_results[key][func_key])
+            self.assertEqual(self.mrs[key].extra_stats, self.expected_results[key][func_key])
 
     def test_get_dict_tables(self):
         func_key = 'Dict Tables'
         for key, match in self.mrs.items():
-            self.assertEqual(self.mrs[key].get_dict_tables(), self.expected_results[key][func_key])
-
-    def test_is_scraped(self):
-        for match in self.mrs.values():
-            self.assertTrue(match.is_scraped())
+            self.assertEqual(self.mrs[key].tables, self.expected_results[key][func_key])
 
     def test_json_to_file(self):
         for key, match in self.mrs.items():
