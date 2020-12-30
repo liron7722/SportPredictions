@@ -4,6 +4,7 @@ import re
 import pandas as pd
 from bs4 import BeautifulSoup
 from Scripts.Utility.requests import connect
+from Scripts.Utility.json import str_to_dict
 from Scripts.Scraper.Sports.Soccer.basic import Basic
 from Scripts.Scraper.Sports.Soccer.MatchReport import MatchReport
 
@@ -117,7 +118,13 @@ class Season(Basic):
         text = connect(url=url, return_text=True)
         soup = BeautifulSoup(text, "lxml")
         df = pd.read_html(str(soup))[0]
-        self.nationalities = df[df.List != 'List']  # remove row with used as header in the middle of the table
+        data = df[df.List != 'List']  # remove row with used as header in the middle of the table
+        data = str_to_dict(data)  # save the json string as dict
+        for item in data:
+            item['List'] = item['List'].split(', ')  # get all the names in the strings
+            item['List'][-1] = item['List'][-1].replace(' ...', '')  # last name got 3 dots
+            item['Min'] = 0 if item['Min'] is None else item['Min']
+        self.nationalities = data
 
     def scrape_fixtures(self, url: str):
         text = connect(url=url, return_text=True)
