@@ -10,8 +10,8 @@ from Scripts.Utility.exceptions import PageNotLoaded
 from Scripts.Utility.resources import is_there_free_memory
 from Scripts.Utility.json import read, BASE_PATH as PRODUCT_PATH
 # Scrape
-from Scripts.Scraper.Sports.Soccer.basic import Basic
-from Scripts.Scraper.Sports.Soccer.Season import Season
+from Scripts.Scraper.Soccer.basic import Basic
+from Scripts.Scraper.Soccer.Season import Season
 
 
 class Competition(Basic):

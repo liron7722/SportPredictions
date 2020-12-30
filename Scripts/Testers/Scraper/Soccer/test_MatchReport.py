@@ -3,7 +3,7 @@
 import os
 import unittest
 from Scripts.Utility.json import read
-from Scripts.Scraper.Sports.Soccer.MatchReport import MatchReport
+from Scripts.Scraper.Soccer.MatchReport import MatchReport
 
 BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}"
 

@@ -5,8 +5,8 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from Scripts.Utility.requests import connect
 from Scripts.Utility.json import str_to_dict
-from Scripts.Scraper.Sports.Soccer.basic import Basic
-from Scripts.Scraper.Sports.Soccer.MatchReport import MatchReport
+from Scripts.Scraper.Soccer.basic import Basic
+from Scripts.Scraper.Soccer.MatchReport import MatchReport
 
 
 class Season(Basic):

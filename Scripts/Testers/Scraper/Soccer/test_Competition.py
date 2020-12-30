@@ -3,7 +3,7 @@ import unittest
 from Scripts.Utility.db import DB
 from Scripts.Utility.json import read
 from Scripts.Utility.logger import Logger
-from Scripts.Scraper.Sports.Soccer.Competition import Competition
+from Scripts.Scraper.Soccer.Competition import Competition
 
 BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}"
 

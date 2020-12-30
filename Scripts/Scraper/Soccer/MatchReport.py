@@ -6,7 +6,7 @@ from functools import reduce
 from bs4 import BeautifulSoup
 from Scripts.Utility.requests import connect
 from Scripts.Utility.exceptions import ParseError
-from Scripts.Scraper.Sports.Soccer.basic import Basic
+from Scripts.Scraper.Soccer.basic import Basic
 
 
 class MatchReport(Basic):

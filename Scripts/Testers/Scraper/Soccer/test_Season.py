@@ -4,7 +4,7 @@ import pandas as pd
 from Scripts.Utility.db import DB
 from Scripts.Utility.json import read
 from Scripts.Utility.logger import Logger
-from Scripts.Scraper.Sports.Soccer.Season import Season
+from Scripts.Scraper.Soccer.Season import Season
 
 BASE_PATH = f"{os.path.dirname(os.path.realpath(''))}{os.sep}SportPredictions{os.sep}"
 

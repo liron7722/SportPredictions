@@ -9,9 +9,9 @@ from Scripts.Scraper.SoccerScraper import SoccerScraper
 
 # Tests Imports
 # Scraper Tests
-# from Scripts.Testers.Scraper.Sports.Soccer.test_MatchReport import TestMatchReport
-from Scripts.Testers.Scraper.Sports.Soccer.test_Season import TestSeason
-# from Scripts.Testers.Scraper.Sports.Soccer.test_Competition import TestCompetition
+# from Scripts.Testers.Scraper.Soccer.test_MatchReport import TestMatchReport
+from Scripts.Testers.Scraper.Soccer.test_Season import TestSeason
+# from Scripts.Testers.Scraper.Soccer.test_Competition import TestCompetition
 # Analyzers Tests
 
 # Models Tests

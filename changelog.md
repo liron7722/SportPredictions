@@ -1,9 +1,9 @@
 ### Known Bugs:
-    - MemoryError ?
     - You tell me
     
 ### Coming  Up:
     - add support for higher sized documents for seasons with a lot of fixtures
+    - fix test script of season after json string to json update
 
 ### ToDo List:  
 	- ELK
@@ -23,6 +23,10 @@
 
 
 ### Updates:
+#### update 8#:
+    - new files structure
+
+
 #### update 7#:
     - added support for python 3.8
     - reorganized the data in the mongoDB in order to not get files above 16MB
@@ -32,6 +36,7 @@
     - match fixture bugs fix
     - minor improvements in utility scripts
     - added retry option when trying to get a url in case of a bad status code
+    - json strings will now be jsons as well
 
 #### update 6#: 
     - add basic.py to inherit by soccer scripts
