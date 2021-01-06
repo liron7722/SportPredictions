@@ -46,8 +46,9 @@ class DB:
         return collection
 
     def insert_document(self, collection, data: dict):
-        collection.insert_one(data)
+        ack = collection.insert_one(data)
         self.log('insert document to collection')
+        return str(ack.inserted_id)
 
     def update_document(self, collection, fil: dict, data: dict):
         try:

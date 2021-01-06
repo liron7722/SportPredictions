@@ -134,13 +134,15 @@ class MatchReport(Basic):
                 if temp.text in headers:
                     key = headers.pop(0)
                 else:
+                    side = 'Home' if temp.attrs['class'][1] == 'a' else 'Away'
                     time_value = re.findall(r'\d+', temp.contents[1].contents[0])
                     event_dict[key].append({
                         'Minute': time_value[0] if len(time_value) == 1
                         else {'Minute': time_value[0], 'Added Time': time_value[1]},
                         'Scoreboard': temp.contents[1].contents[2].text,
                         'Event': temp.contents[3].contents[1].attrs['class'][1],
-                        'Player': temp.contents[3].contents[3].contents[1].contents[1].text
+                        'Player': temp.contents[3].contents[3].contents[1].contents[1].text,
+                        'Side': side
                     })
 
         return event_dict

@@ -61,6 +61,7 @@ class Basic:
 
     def save(self):
         name = self.get_name()
+        name = name.replace('-Stats', '')
         if self.db_client is not None:  # save data to db
             db = self.db_client.get_db(name=name)
             self.to_db(db=db)

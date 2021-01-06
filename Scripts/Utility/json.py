@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from json import load, loads, dump, JSONEncoder, JSONDecodeError
+from json import load, loads, dump, dumps, JSONEncoder, JSONDecodeError
 from numpy import integer, floating, ndarray
 from os import sep, path as os_path
 from Scripts.Utility.path import create_dir
@@ -18,6 +18,11 @@ class NpEncoder(JSONEncoder):
             return obj.tolist()
         else:
             return super(NpEncoder, self).default(obj)
+
+
+def encode_data(data):
+    temp = dumps(data, cls=NpEncoder)
+    return loads(temp)
 
 
 def save(data, name: str = None, path: str = None):
