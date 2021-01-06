@@ -21,11 +21,10 @@ class Scraper:
         self.logger = Logger(f'{name}.log').get_logger()
 
     # Logger
-    def log(self, message: str, level: int = None):
+    def log(self, message: str, level: int = 10):
         if self.logger is not None:
-            if level is None:
-                if self.ENV == 'Development':
-                    level = 10
-                elif self.ENV == 'Production':
-                    level = 20
+            if self.ENV == 'Development':
+                level = 10
+            elif self.ENV == 'Production':
+                level = 20
             self.logger.log(level, message)

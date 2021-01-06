@@ -32,13 +32,12 @@ class Basic:
         self.path = self.get_name() if path is None else path
 
     # Utility functions
-    def log(self, message: str, level: int = None):
+    def log(self, message: str, level: int = 10):
         if self.logger is not None:
-            if level is None:
-                if ENV == 'Development':
-                    level = 10
-                elif ENV == 'Production':
-                    level = 20
+            if ENV == 'Development':
+                level = 10
+            elif ENV == 'Production':
+                level = 20
             self.logger.log(level, message)
 
     # Local Save
