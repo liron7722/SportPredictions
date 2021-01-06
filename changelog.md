@@ -2,30 +2,38 @@
     - You tell me
     
 ### Coming  Up:
-    - add support for higher sized documents for seasons with a lot of fixtures
     - fix test script of season after json string to json update
+    - fix match_fixture and season test files after changes
 
 ### ToDo List:  
-	- ELK
-	- Docker
-    - Files struture check up
-	- Data analysis
-	- Add ML: sklearn, pytourc, TensorFlow, Keras
-	- Move to cloud (aws) (Instanse for ELK \ DB \ Scraper \ Data analysis \ ML Modeling Separtly)
-	- Auto restart
-	- Monitor
-	- Website
-	- Added more sports
-	    - Complete {Sport} Scraper
-	    - Data analysis
-	    - ML
-	    - Move to cloud
+    - Data analysis
+        - Data Handle
+        - Auto Analayzers per column to predict
 
+	- Add ML: sklearn, pytourc, TensorFlow, Keras
+
+	- Website with on demend predictions
+
+	- Added more sports
+	    - NFL (Football)
+        - NBA (Basketball)
+        - MLB (Baseball)
+        - NHL (Hockey)
+        
+    - Miscellaneous
+	    - ELK for logs
+	    - Dockers for each project part
+        - Files struture check up
+	    - Move to cloud (aws) (Instanse for ELK \ DB \ Scraper \ Data analysis \ ML Modeling Separtly)
+	    - Auto restart
+	    - Monitor
 
 ### Updates:
 #### update 8#:
+    - bugs fix and small improvements
+    - changed db save and upload structure
     - new files structure
-
+    - added side info to events in match fixture
 
 #### update 7#:
     - added support for python 3.8
