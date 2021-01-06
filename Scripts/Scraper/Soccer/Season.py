@@ -4,18 +4,18 @@ import re
 import pandas as pd
 from bs4 import BeautifulSoup
 from Scripts.Utility.requests import connect
-from Scripts.Utility.json import str_to_dict
+from Scripts.Utility.json import str_to_dict, encode_data
 from Scripts.Scraper.Soccer.basic import Basic
 from Scripts.Scraper.Soccer.MatchReport import MatchReport
 
 
 class Season(Basic):
-    def __init__(self, key, url, info, logger=None, db=None, path: str = None):
+    def __init__(self, key, url, info, logger=None, db=None, path: str = None, to_scrape: list = None):
         # initialize
         super().__init__(url=url, key=key, logger=logger, db=db, path=path)
         self.base_info = info
         self.fixtures = list()
-        self.to_scrape = list()
+        self.to_scrape = list() if to_scrape is None else to_scrape
         self.nationalities = None
         # connect and parse
         text = connect(url=self.url, return_text=True)
@@ -33,7 +33,9 @@ class Season(Basic):
     # Preparation functions
     def get_base_info(self):
         if type(self.base_info) in [pd.core.series.Series, pd.core.frame.DataFrame]:  # Ignore warnings
-            return self.base_info.to_json()
+            return self.base_info.to_dict()
+        elif type(self.base_info) is str:
+            return str_to_dict(self.base_info)
         else:  # already as json because loaded from db
             return self.base_info
 
@@ -42,9 +44,12 @@ class Season(Basic):
         return [fixture.to_json() for fixture in self.fixtures]
 
     def get_nationalities(self):
-        if self.nationalities is not None:  # in case this season don't got nationalities page
+        if self.nationalities is pd.core.frame.DataFrame:  # in case this season don't got nationalities page
             return [self.nationalities.iloc[i].to_json() for i in range(len(self.nationalities))]
-        return []
+        elif self.nationalities is not None:
+            return self.nationalities
+        else:
+            return []
 
     # DB Save
     @staticmethod
@@ -60,18 +65,28 @@ class Season(Basic):
                     new[header][key] = old[header][key]
         return new
 
-    def to_db(self, db, name="Seasons"):
-        data = self.to_json()
-        fil = {"URL": self.url}
-        collection = self.db_client.get_collection(name=name, db=db)
+    def upload_to_db(self, collection, data):
+        fil = {"URL": data['URL']}  # filter
+        data = encode_data(data)  # Numpy encoder
         # update
         if self.db_client.is_document_exist(collection=collection, fil=fil):
-            original_data = collection.find(fil).next()  # get original data from db
-            data = self.set_data_to_update(data, original_data)
-            self.update_db(name, collection=collection, fil=fil, data=data)
+            self.db_client.update_document(collection=collection, fil=fil, data=data)
         # insert
         else:
-            self.insert_to_db(name, collection=collection, data=data)
+            self.db_client.insert_document(collection=collection, data=data)
+
+    def to_db(self, db):
+        data = self.to_json()
+        # Data preparation
+        basic = data['Basic Info']
+        basic['URL'] = data['URL']
+        basic['To Scrape'] = data['To Scrape']
+        basic['Nationalities'] = data['Advance Info']['Nationalities']
+        # Data upload
+        collection = self.db_client.get_collection(name=basic['Season'], db=db)
+        self.upload_to_db(collection=collection, data=basic)
+        for match in data['Advance Info']['Fixtures']:
+            self.upload_to_db(collection=collection, data=match)
 
     def to_json(self, name: str = None):
         super().to_json()
@@ -103,10 +118,10 @@ class Season(Basic):
         values = temp.find_all('li', {'class': "full"})
         for val in values:
             url = val.find('a').get('href')
-            if 'Fixtures' in url:
-                res['Fixtures'] = self.extract_url(url)
-            elif 'Nationalities' in url:
+            if 'Nationalities' in url:
                 res['Nationalities'] = self.extract_url(url)
+            elif 'Fixtures' in url:
+                res['Fixtures'] = self.extract_url(url)
         return res
 
     def add_fixture(self, url: str):
@@ -118,13 +133,28 @@ class Season(Basic):
         text = connect(url=url, return_text=True)
         soup = BeautifulSoup(text, "lxml")
         df = pd.read_html(str(soup))[0]
+
         data = df[df.List != 'List']  # remove row with used as header in the middle of the table
-        data = str_to_dict(data)  # save the json string as dict
-        for item in data:
-            item['List'] = item['List'].split(', ')  # get all the names in the strings
-            item['List'][-1] = item['List'][-1].replace(' ...', '')  # last name got 3 dots
-            item['Min'] = 0 if item['Min'] is None else item['Min']
-        self.nationalities = data
+        data = data.reset_index()
+        data = data.to_dict()
+
+        res = list()
+        for i in range(len(data['Rk'].keys())):
+            temp = {'Nation': None, '# Players': None, 'Min': None, 'List': None}
+            res.append(temp)
+
+            res[i]['Nation'] = data['Nation'][i]
+            res[i]['# Players'] = data['# Players'][i]
+
+            res[i]['Min'] = data['Min'][i]
+            res[i]['Min'] = 0 if data['Min'][i] is None else data['Min'][i]
+
+            lst = data['List'][i]
+            lst = lst.split(', ')  # get all the names in the strings
+            lst[-1] = lst[-1].replace(' ...', '')  # last name got 3 dots
+            res[i]['List'] = lst
+
+        self.nationalities = res
 
     def scrape_fixtures(self, url: str):
         text = connect(url=url, return_text=True)
@@ -151,7 +181,7 @@ class Season(Basic):
 
     def scrape(self):
         self.parse_general_info()
-        funcs = {'Fixtures': self.scrape_fixtures, 'Nationalities': self.scrape_nationalities}
+        funcs = {'Nationalities': self.scrape_nationalities, 'Fixtures': self.scrape_fixtures}
         temp = self.navbar()  # get inner navbar links
         for key, url in temp.items():
             funcs[key](url=self.base + url)  # Ignore or make it based of the key calls

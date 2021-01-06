@@ -33,45 +33,50 @@ class Competition(Basic):
         return [season.to_json() for season in self.seasons]
 
     def get_tables(self):
-        if self.tables is list:
+        if type(self.tables) is list:
             return self.tables
         else:
             return [[table.iloc[i].to_json() for i in range(len(table))] for table in self.tables]
 
     # Load
-    def load_seasons(self, season_list):
+    def load_seasons(self, season):
         self.log(f'Cmd: load_seasons')
-        for season in season_list:
-            url = season['URL'].replace(self.base, '')
-            if len(season['To Scrape']) > 0:
-                self.add_season(url, season['Basic Info'])
-            else:
-                self.seasons_urls.append(url)
+        url = season['URL'].replace(self.base, '')
+        if len(season['To Scrape']) > 0:
+            basic = season
+            basic.pop('URL')
+            scrape_list = basic.pop('To Scrape')
+            basic.pop('Nationalities')
+            self.add_season(url=url, info=basic, to_scrape=scrape_list)
+        else:
+            self.seasons_urls.append(url)
 
     # Local load
     def load_files(self, name):
         self.log(f'Cmd: load_files')
-        season_list = list()
         path = f'{PRODUCT_PATH}{name}{sep}'
         for file in get_files(folder_path=path):
-            data = dict()
             temp = read(file)
-            for key in ['URL', 'To Scrape', 'Basic Info']:
-                data[key] = temp[key]
-            season_list.append(data)
-        self.load_seasons(season_list=season_list)
+            basic = temp['Basic Info']
+            basic['URL'] = temp['URL']
+            basic['To Scrape'] = temp['To Scrape']
+            self.load_seasons(season=basic)
 
     # DB Load
     def load_db(self, name):
         self.log(f'Cmd: load_db')
         db = self.db_client.get_db(name=name)  # get db
-        collection = self.db_client.get_collection(name='Seasons', db=db)  # get collection
-        season_list = collection.find({})  # get seasons
-        self.load_seasons(season_list=season_list)
+        for coll_name in self.db_client.get_collections_names(db=db):
+            if coll_name == 'Info':
+                continue
+            collection = self.db_client.get_collection(name=coll_name, db=db)  # get collection
+            basic = collection.find({"Season": coll_name}).next()  # get season basic info
+            basic.pop('_id')  # pop document id
+            self.load_seasons(season=basic)
 
     def load(self):
         self.log(f'Cmd: load')
-        name = self.get_name()
+        name = self.get_name().replace('-Stats', '')
         if self.db_client is not None:  # load data from db
             self.load_db(name=name)
         else:  # load data from local files
@@ -117,12 +122,12 @@ class Competition(Basic):
             self.log(f'Added season')
             self.seasons_urls.append(url)
 
-            temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path)
-            temp.to_scrape = [] if to_scrape is None else to_scrape
+            temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path,
+                          to_scrape=to_scrape)
             temp.run()
 
-            if is_there_free_memory():  # save to memory
-                self.seasons.append(temp)
+            # if is_there_free_memory():  # save to memory
+            #    self.seasons.append(temp)
 
         else:  # season was loaded from db
             self.log(f'Already added')
