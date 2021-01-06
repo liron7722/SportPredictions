@@ -6,7 +6,7 @@ from Scripts.Utility.time import call_sleep, time_wrapper
 from Scripts.Utility.exceptions import PageNotLoaded, ParseError
 # Scraper Imports
 from Scripts.Scraper.Scraper import Scraper
-from Scripts.Scraper.Soccer import Competition
+from Scripts.Scraper.Soccer.Competition import Competition
 
 
 class SoccerScraper(Scraper):
