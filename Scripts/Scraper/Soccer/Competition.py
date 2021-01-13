@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
 # Utility
+import gc
 import pandas as pd
 from bs4 import BeautifulSoup
 from Scripts.Utility.path import get_files, sep
 from Scripts.Utility.time import time_wrapper
 from Scripts.Utility.requests import connect
 from Scripts.Utility.exceptions import PageNotLoaded
-from Scripts.Utility.resources import is_there_free_memory
 from Scripts.Utility.json import read, BASE_PATH as PRODUCT_PATH
 # Scrape
 from Scripts.Scraper.Soccer.basic import Basic
 from Scripts.Scraper.Soccer.Season import Season
+from Scripts.Scraper.Soccer.MatchReport import MatchReport
 
 
 class Competition(Basic):
@@ -43,11 +44,13 @@ class Competition(Basic):
         self.log(f'Cmd: load_seasons')
         url = season['URL'].replace(self.base, '')
         if len(season['To Scrape']) > 0:
-            basic = season
-            basic.pop('URL')
+            basic = season.copy()
+            # remove
+            for key in ['URL', 'Version', 'Nationalities']:
+                basic.pop(key)
             scrape_list = basic.pop('To Scrape')
-            basic.pop('Nationalities')
-            self.add_season(url=url, info=basic, to_scrape=scrape_list)
+            fixture_version = basic.pop('Fixture Version')
+            self.add_season(url=url, info=basic, to_scrape=scrape_list, fixture_version=fixture_version)
         else:
             self.seasons_urls.append(url)
 
@@ -61,6 +64,7 @@ class Competition(Basic):
             basic['URL'] = temp['URL']
             basic['To Scrape'] = temp['To Scrape']
             self.load_seasons(season=basic)
+            gc.collect()  # Tell Garbage Collector to release unreferenced memory
 
     # DB Load
     def load_db(self, name):
@@ -73,6 +77,7 @@ class Competition(Basic):
             basic = collection.find({"Season": coll_name}).next()  # get season basic info
             basic.pop('_id')  # pop document id
             self.load_seasons(season=basic)
+            gc.collect()  # Tell Garbage Collector to release unreferenced memory
 
     def load(self):
         self.log(f'Cmd: load')
@@ -116,18 +121,14 @@ class Competition(Basic):
 
     # Scrape functions
     @time_wrapper
-    def add_season(self, url: str, info, to_scrape: list = None):
+    def add_season(self, url: str, info, fixture_version=MatchReport.version, to_scrape: list = None):
         self.log(f'Cmd: add_season\t Url: {url}')
         if url not in self.seasons_urls:  # add new season or un finished scraped season
             self.log(f'Added season')
             self.seasons_urls.append(url)
-
             temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path,
-                          to_scrape=to_scrape)
+                          to_scrape=to_scrape, fixture_version=fixture_version)
             temp.run()
-
-            # if is_there_free_memory():  # save to memory
-            #    self.seasons.append(temp)
 
         else:  # season was loaded from db
             self.log(f'Already added')

@@ -10,12 +10,16 @@ from Scripts.Scraper.Soccer.MatchReport import MatchReport
 
 
 class Season(Basic):
-    def __init__(self, key, url, info, logger=None, db=None, path: str = None, to_scrape: list = None):
+    version = '1.0.0'
+
+    def __init__(self, key, url, info, to_scrape: list = None, logger=None, db=None, path: str = None,
+                 fixture_version=MatchReport.version):
         # initialize
         super().__init__(url=url, key=key, logger=logger, db=db, path=path)
         self.base_info = info
         self.fixtures = list()
         self.to_scrape = list() if to_scrape is None else to_scrape
+        self.fixture_version = fixture_version
         self.nationalities = None
         # connect and parse
         text = connect(url=self.url, return_text=True)
@@ -69,6 +73,7 @@ class Season(Basic):
         fil = {"URL": data['URL']}  # filter
         data = encode_data(data)  # Numpy encoder
         # update
+        document = self.db_client
         if self.db_client.is_document_exist(collection=collection, fil=fil):
             self.db_client.update_document(collection=collection, fil=fil, data=data)
         # insert
@@ -82,6 +87,8 @@ class Season(Basic):
         basic['URL'] = data['URL']
         basic['To Scrape'] = data['To Scrape']
         basic['Nationalities'] = data['Advance Info']['Nationalities']
+        basic['Version'] = data['Version']
+        basic['Fixture Version'] = data['Fixture Version']
         # Data upload
         collection = self.db_client.get_collection(name=basic['Season'], db=db)
         self.upload_to_db(collection=collection, data=basic)
@@ -97,7 +104,9 @@ class Season(Basic):
                     'Fixtures': self.get_fixtures(),
                     'Nationalities': self.get_nationalities()
                     },
-                'To Scrape': self.to_scrape
+                'To Scrape': self.to_scrape,
+                'Version': self.version,
+                'Fixture Version': MatchReport.version
                 }
 
     # Scrape and Parse functions
@@ -149,10 +158,12 @@ class Season(Basic):
             res[i]['Min'] = data['Min'][i]
             res[i]['Min'] = 0 if data['Min'][i] is None else data['Min'][i]
 
-            lst = data['List'][i]
-            lst = lst.split(', ')  # get all the names in the strings
-            lst[-1] = lst[-1].replace(' ...', '')  # last name got 3 dots
-            res[i]['List'] = lst
+            if type(data['List'][i]) is float:  # In case no names in the table cell
+                res[i]['List'] = list()
+            else:
+                lst = data['List'][i].split(', ')  # get all the names in the strings
+                lst[-1] = lst[-1].replace(' ...', '')  # last name got 3 dots
+                res[i]['List'] = lst
 
         self.nationalities = res
 
@@ -160,8 +171,11 @@ class Season(Basic):
         text = connect(url=url, return_text=True)
         soup = BeautifulSoup(text, "lxml")
         html_urls = soup.find('tbody').find_all('tr')  # get links of all fixtures
-        scrape_list = [j for j in range(len(html_urls))] if len(self.to_scrape) == 0 else self.to_scrape
+        # if new version reset scrape list to scrape from start
+        self.to_scrape = list() if MatchReport.version != self.fixture_version else self.to_scrape
+        scrape_list = [j for j in range(len(html_urls))] if len(self.to_scrape) == 0 else self.to_scrape.copy()
         self.log(f'Going to scrape {len(scrape_list)} fixtures')
+        self.to_scrape = list()
         for i in scrape_list:
             try:
                 temp = html_urls[i].contents[-2]
