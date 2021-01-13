@@ -1,4 +1,17 @@
+from datetime import datetime, date
 from time import time, sleep
+
+
+def change_date_format(date_string, fmt='%A %B %d, %Y'):
+    d = datetime.strptime(date_string, fmt).date()
+    return d.isoformat()
+
+
+def get_days_difference(date_one, date_two=None, fmt='%Y-%m-%d'):
+    t_d = date.today()  # Today date
+    date_two = date_two if date_two is not None else t_d.isoformat()
+    d = datetime.strptime(date_one, fmt) - datetime.strptime(date_two, fmt)
+    return abs(d.days)
 
 
 def call_sleep(seconds=0, minutes=0, hours=0, days=0, logger=None):
