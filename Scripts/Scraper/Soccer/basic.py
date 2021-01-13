@@ -23,10 +23,12 @@ class Basic:
 
     # Setters
     def add_logger(self, logger):
-        self.logger = logger
+        if self.logger is None:
+            self.logger = logger
 
     def add_db(self, db):
-        self.db_client = db
+        if self.db_client is None:
+            self.db_client = db
 
     def add_path(self, path: str = None):
         self.path = self.get_name() if path is None else path

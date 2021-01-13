@@ -37,7 +37,8 @@ class Logger:
 
         # File handler
         create_dir(path)
-        file_handler = logging.handlers.RotatingFileHandler(path + name, maxBytes=10485760, backupCount=3)
+        file_handler = logging.handlers.RotatingFileHandler(path + name, maxBytes=10485760, backupCount=3,
+                                                            encoding="UTF-8")
         file_handler.setFormatter(formatter)
         
         # adding Handlers

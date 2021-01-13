@@ -3,12 +3,12 @@ from Scripts.Utility.time import call_sleep
 from Scripts.Utility.exceptions import PageNotLoaded
 
 
-def connect(url, return_text: bool = True, return_json: bool = False, re_try: bool = True):
+def connect(url, return_text: bool = True, return_json: bool = False, re_try: int = 5):
     r = requests.get(url)
     if r.status_code != 200:
         call_sleep(seconds=5)
-        if re_try:
-            return connect(url, return_text, return_json, re_try=False)
+        if re_try > 0:
+            return connect(url, return_text, return_json, re_try=re_try - 1)
         raise PageNotLoaded(r.url, r.status_code)
     if return_text:
         return r.text

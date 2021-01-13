@@ -32,8 +32,9 @@ class DB:
         return [item[key] for item in db.list_collections()]
 
     @staticmethod
-    def get_documents_list(collection):
-        return [item for item in collection.find()]
+    def get_documents_list(collection, fil=None):
+        fil = dict() if fil is None else fil
+        return [item for item in collection.find(fil)]
 
     def get_db(self, name: str):
         db = self.client.get_database(name)
