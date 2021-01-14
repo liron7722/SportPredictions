@@ -4,6 +4,10 @@
 ### Coming  Up:
     - fix test script of season after json string to json update
     - fix match_fixture and season test files after changes
+    - add data handler test file    
+    
+    - check read past season data properly
+    - check calculated fixture data save properly - look at past season
 
 ### ToDo List:  
     - Data analysis
@@ -29,6 +33,17 @@
 	    - Monitor
 
 ### Updates:
+#### update 9#:
+    - added fixture, team, manager, referee data handler
+    - added functions to utility scripts
+    - added 2nd yellow card support
+    - added version to match report and fixture handling
+    - improved memory management
+    - fixed a bug where wasn't saveing fixture stats properly if Possession wasn't on stats list
+    - fixture dict table are now dict inside as well instead of json strings
+    - now will download a season from start if we changed the season or match report version
+    
+
 #### update 8#:
     - bugs fix and small improvements
     - changed db save and upload structure

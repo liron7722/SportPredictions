@@ -4,7 +4,7 @@ import sys
 # Scraper Imports
 from Scripts.Scraper.SoccerScraper import SoccerScraper
 # Analyzers Imports
-
+from Scripts.Analyzers.Handlers.Soccer.DataHandler import DataHandler
 # Models Imports
 
 # Tests Imports
@@ -23,12 +23,19 @@ class Index:
         soccer_scraper = SoccerScraper()
         soccer_scraper.run()
 
+    @staticmethod
+    def run_data_handler():
+        data_handler = DataHandler()
+        data_handler.run()
+
     def scrapers_menu(self, choice: int = None):
         functions = {1: self.run_soccer_scraper,
+                     2: self.run_data_handler
                      }
         if choice is None:
             choice = int(input("Enter which function you want to run:\n"
                                "1: run_soccer_scraper\n"
+                               "2: run_data_handler\n"
                                ))
         if len(functions) >= choice > 0:
             func = functions[choice]
@@ -81,7 +88,7 @@ def init(index):
 
     else:
         choice = int(input("Enter which function you want to run:\n"
-                           "1: Scrapers Menu\n"
+                           "1: Scripts Menu\n"
                            "2: Tests Menu\n"
                            ))
     if len(functions) >= int(choice / 10) and choice > 0:
