@@ -10,11 +10,7 @@ from Scripts.Scraper.Soccer.basic import Basic
 
 
 class MatchReport(Basic):
-    score_box = None
-    register_teams = None
-    events = None
-    stats = None
-    extra_stats = None
+    version = '1.0.2'
 
     def __init__(self, url: str):
         super().__init__(key=None, url=url)
@@ -24,10 +20,17 @@ class MatchReport(Basic):
         self.df_tables = pd.read_html(str(self.soup))
         self.register_teams_flag = True if len(self.soup.find_all('div', {'id': "field_wrap"})) > 0 else False
 
+        self.score_box = None
+        self.register_teams = None
+        self.events = None
+        self.stats = None
+        self.extra_stats = None
+
     def to_json(self):
         super().to_json()
         return {
             'URL': self.url,
+            'Version': self.version,
             'Score Box': self.score_box,
             'Register Teams': self.register_teams,
             'Events': self.events,
@@ -134,7 +137,6 @@ class MatchReport(Basic):
                 if temp.text in headers:
                     key = headers.pop(0)
                 else:
-                    side = 'Home' if temp.attrs['class'][1] == 'a' else 'Away'
                     time_value = re.findall(r'\d+', temp.contents[1].contents[0])
                     event_dict[key].append({
                         'Minute': time_value[0] if len(time_value) == 1
@@ -142,7 +144,7 @@ class MatchReport(Basic):
                         'Scoreboard': temp.contents[1].contents[2].text,
                         'Event': temp.contents[3].contents[1].attrs['class'][1],
                         'Player': temp.contents[3].contents[3].contents[1].contents[1].text,
-                        'Side': side
+                        'Side': 'Home' if temp.attrs['class'][1] == 'a' else 'Away'
                     })
 
         return event_dict
@@ -167,12 +169,18 @@ class MatchReport(Basic):
             for j in range(3, n - 7, 4):
                 key = stats_soup.contents[j].text  # stat name
                 temp = stats_soup.contents[j + 2].contents[i].contents[1].contents[1].text  # stat values
-                teams_stats[item][key] = temp if j == 3 else stat_to_dict(temp, i)  # store value or separate to dict
+                # store value or separate to dict
+                teams_stats[item][key] = temp if key == 'Possession' else stat_to_dict(temp, i)
             # getting cards count
-            teams_stats[item]['Cards'] = {'Yellow': 0, 'Red': 0}
+            teams_stats[item]['Cards'] = {'Yellow': 0, 'Red': 0, '2nd_Yellow': 0}
             temp = stats_soup.contents[n - 2].contents[i].contents[1].contents[1].contents[0]
             for j in range(0, len(temp)):
-                value = 'Yellow' if temp.contents[j].attrs['class'][0] == 'yellow_card' else 'Red'
+                if temp.contents[j].attrs['class'][0] == 'yellow_card':
+                    value = 'Yellow'
+                elif temp.contents[j].attrs['class'][0] == 'red_card':
+                    value = 'Red'
+                else:  # yellow_red_card
+                    value = '2nd_Yellow'
                 teams_stats[item]['Cards'][value] += 1
         return teams_stats
 
@@ -237,21 +245,21 @@ class MatchReport(Basic):
         combine_table = self.change_col_name(combine_table)
         combine_table = self.change_nan(combine_table)
         return {
-            'Total': combine_table.iloc[-1].to_json(),
-            'Players': [combine_table.iloc[i].to_json() for i in range(len(combine_table[:-1]))]
+            'Total': combine_table.iloc[-1].to_dict(),
+            'Players': [combine_table.iloc[i].to_dict() for i in range(len(combine_table[:-1]))]
         }
 
     def set_goalkeeper_stats(self, table):
         table = self.change_col_name(table)
         table = self.change_nan(table)
-        return table.to_json()
+        return table.to_dict()
 
     def set_shots_stats(self, table):
         # Rename bad columns
         table = self.change_col_name(table)
         table = table.dropna(thresh=1).reset_index(drop=True)
         table = self.change_nan(table)
-        return [table.iloc[i].to_json() for i in range(len(table))]
+        return [table.iloc[i].to_dict() for i in range(len(table))]
 
     def parse(self):
         try:
