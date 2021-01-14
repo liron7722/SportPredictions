@@ -37,15 +37,18 @@ class DataHandler:
             info = {'Competition': db_name, 'Season': coll_name}
             collection = self.db_client.get_collection(name=coll_name, db=db)  # get collection
             fixtures = self.db_client.get_documents_list(collection=collection)  # get all the documents
+            # remove the basic info document
             for fixture in fixtures:
-                if 'Season' in fixture.keys():  # skip the basic info document
-                    temp = fixture
-                    continue
-                else:  # change the date format to enable sort option
-                    date_value = fixture['Score Box']['DateTime']['Date']
-                    fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
-            fixtures.remove(temp)
+                if 'Season' in fixture.keys():
+                    fixtures.remove(fixture)
+                    break
+            # change the date format to enable sort option
+            for fixture in fixtures:
+                date_value = fixture['Score Box']['DateTime']['Date']
+                fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
+            # Sort fixture by date
             fixtures = sorted(fixtures, key=lambda f: f['Score Box']['DateTime']['Date'])
+            # Handle fixture
             for fixture in fixtures:
                 gc.collect()  # Tell Garbage Collector to release unreferenced memory
                 temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)

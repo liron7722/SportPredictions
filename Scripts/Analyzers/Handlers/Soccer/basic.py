@@ -123,13 +123,7 @@ class Basic:
         if date is None:
             self.stats[f'{self.cls_type}_LTP'] = None
         else:
-            try:
-                self.stats[f'{self.cls_type}_LTP'] = \
-                    get_days_difference(date_one=date, date_two=self.fixture['Score Box']['DateTime']['Date'])
-            except ValueError:
-                print(f'd1: {date}')
-                print(f"d2: {self.fixture['Score Box']['DateTime']['Date']}")
-                self.stats[f'{self.cls_type}_LTP'] = None
+            get_days_difference(date_one=date, date_two=self.fixture['Score Box']['DateTime']['Date'])
 
     # Read stats from fixture
     def read_and_save(self):
