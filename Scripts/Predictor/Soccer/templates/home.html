@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <p>Welcome to Soccer Prediction API</p>
+        <p>documentation: https://www.lironrevah.tech/projects/sports-prediction-api/soccer</p>
+    </div>
+    <div>
+        <form action="/predict" method="POST">
+            <label for="competition">Competition:</label><br>
+            <input type="text" id="competition" name="competition"><br>
+            <label for="home_team_name">Home Team:</label><br>
+            <input type="text" id="home_team_name" name="home_team_name"><br>
+            <label for="away_team_name">Away Team:</label><br>
+            <input type="text" id="away_team_name" name="away_team_name"><br>
+            <label for="home_team_manager">Home Team Manager:</label><br>
+            <input type="text" id="home_team_manager" name="home_team_manager"><br>
+            <label for="away_team_manager">Away Team Manager:</label><br>
+            <input type="text" id="away_team_manager" name="away_team_manager"><br>
+            <label for="ref">Referee:</label><br>
+            <input type="text" id="ref" name="ref"><br><br>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+</body>
+</html>
