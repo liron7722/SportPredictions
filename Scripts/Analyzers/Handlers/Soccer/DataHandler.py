@@ -1,4 +1,4 @@
-import gc
+from gc import collect
 from Scripts.Utility.db import DB
 from Scripts.Utility.logger import Logger
 from Scripts.Utility.time import change_date_format, time_wrapper, call_sleep
@@ -28,6 +28,18 @@ class DataHandler:
                 level = 20
             self.logger.log(level, message)
 
+    def get_curr_season(self, comp_key):
+        db = self.db_client.get_db(name=comp_key)
+        season_names = self.db_client.get_collections_names(db=db)
+        season_names.sort()
+        return season_names[-1] if len(season_names) > 0 else '2020-2021'
+
+    def get_fixture_data(self, info, fixture):
+        info['Season'] = self.get_curr_season(info['Competition'])
+        fixture['Score Box']['DateTime'] = {'Date': None}
+        temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
+        return temp.get_stats_for_prediction()
+
     # Load
     @time_wrapper
     def load_seasons(self, db, db_name, season_names):
@@ -50,24 +62,25 @@ class DataHandler:
             fixtures = sorted(fixtures, key=lambda f: f['Score Box']['DateTime']['Date'])
             # Handle fixture
             for fixture in fixtures:
-                gc.collect()  # Tell Garbage Collector to release unreferenced memory
+                collect()  # Tell Garbage Collector to release unreferenced memory
                 temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
                 temp.run()
-            gc.collect()  # Tell Garbage Collector to release unreferenced memory
+            collect()  # Tell Garbage Collector to release unreferenced memory
 
     # DB Load
     @time_wrapper
     def load_db(self):
         self.log(f'Cmd: load_db')
         competition_names = self.db_client.get_db_names()
-        for key in ['admin', 'config', 'local', 'testing', 'Data-Handling', 'Big-5-European-Leagues']:
+        for key in ['admin', 'config', 'local', 'testing', 'Data-Handling', 'Prediction-Model',
+                    'Big-5-European-Leagues']:
             if key in competition_names:
                 competition_names.remove(key)  # pop utility db's
         for db_name in competition_names:
             db = self.db_client.get_db(name=db_name)  # get db
             season_names = self.db_client.get_collections_names(db=db)
             self.load_seasons(db, db_name, season_names)
-            gc.collect()  # Tell Garbage Collector to release unreferenced memory
+            collect()  # Tell Garbage Collector to release unreferenced memory
 
     def run(self):
         self.log(f'Cmd: Data Handler run')

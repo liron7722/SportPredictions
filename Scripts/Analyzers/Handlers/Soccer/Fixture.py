@@ -14,10 +14,11 @@ class Fixture(Basic):
         self.info = info
         self.fixture = fixture
         fil = {'Competition': info['Competition'], 'Season': info['Season'],
-               'Date': fixture['Score Box']['DateTime']['Date'], 'Home Team': fixture['Score Box']['Home Team']['Name'],
+               'Date': fixture['Score Box']['DateTime']['Date'],
+               'Home Team': fixture['Score Box']['Home Team']['Name'],
                'Away Team': fixture['Score Box']['Away Team']['Name']}
         self.calculated_flag = self.is_match_calculated(fil)
-        if self.calculated_flag is False:
+        if self.calculated_flag is False or self.fixture['Version'] != MatchReport.version:
             self.log(f"Fixture Handler got fixture: Competition: {info['Competition']}\tSeason: {info['Season']}\t"
                      f"Date: {fixture['Score Box']['DateTime']['Date']}\t"
                      f"Home Team: {fixture['Score Box']['Home Team']['Name']}\t"
@@ -47,15 +48,6 @@ class Fixture(Basic):
         self.stats['Home Team'] = self.home_team.name
         self.stats['Away Team'] = self.away_team.name
 
-    def copy_extra_data(self):
-        self.log(f'Cmd: extra_data')
-        index = {'Home Team': 'HT', 'Away Team': 'AT'}
-        for key in index.keys():
-            if 'score_xg' in self.fixture['Score Box'][key].keys():
-                self.calculated_stats[f'{index[key]}_XG'] = self.fixture['Score Box'][key]['score_xg']  # score xg
-            else:
-                self.calculated_stats[f'{index[key]}_XG'] = None  # score xg
-
     # Save all the stats in one dict before calculation
     def save(self):
         self.log(f'Cmd: basic save')
@@ -83,11 +75,11 @@ class Fixture(Basic):
         half_index = {'First Half': 'HT', 'Half Time': 'FT', 'Full Time': 'ET'}  # Half Time, Full Time, Extra Time
         for half, half_key in half_index.items():
             temp = self.calc_events(half)
+            self.calculated_stats[f'{predict_key}_{half_key}_Re'] = temp['Go']['H'] - temp['Go']['A']  # Result
             for column, inner_column in temp.items():
                 for column_type, value in inner_column.items():
                     if column_type in ['H', 'A']:  # The rest are calc in avg and median
                         self.calculated_stats[f'{predict_key}_{half_key}_{column}_{column_type}'] = value
-            self.calculated_stats[f'{predict_key}_{half_key}_Re'] = temp['Go']['H'] - temp['Go']['A']  # Result
 
         for team in ['Home Team', 'Away Team']:
             temp = self.fixture['Stats'][team].copy()
@@ -104,6 +96,15 @@ class Fixture(Basic):
                     self.calculated_stats[f'{predict_key}_{team[0]}_{column_key}'] = int(temp[column])
                 else:
                     self.calculated_stats[f'{predict_key}_{team[0]}_{column_key}'] = None
+
+    def copy_extra_data(self):
+        self.log(f'Cmd: extra_data')
+        index = {'Home Team': 'HT', 'Away Team': 'AT'}
+        for key in index.keys():
+            if 'score_xg' in self.fixture['Score Box'][key].keys():
+                self.calculated_stats[f'{index[key]}_XG'] = self.fixture['Score Box'][key]['score_xg']  # score xg
+            else:
+                self.calculated_stats[f'{index[key]}_XG'] = None  # score xg
 
     # Calculate all the stats
     def calculate(self):
@@ -174,3 +175,12 @@ class Fixture(Basic):
             # Clean memory
             self.clean()
         self.log(f'Cmd: Fixture Handler finished')
+
+    def get_stats_for_prediction(self):
+        self.log(f'Cmd: Getting fixture data for prediction')
+        self.save()
+        self.calculate()
+        self.copy_extra_data()
+        result = self.calculated_stats.copy()
+        self.clean()
+        return result
