@@ -1,4 +1,5 @@
 ### Known Bugs:
+    - Model create dont work in new process
     - You tell me
     
 ### Coming  Up:
@@ -11,7 +12,6 @@
 
 ### ToDo List:  
     - Data analysis
-        - Data Handle
         - Auto Analayzers per column to predict
 
 	- Add ML: sklearn, pytourc, TensorFlow, Keras
@@ -33,6 +33,11 @@
 	    - Monitor
 
 ### Updates:
+#### update 10#:
+    - added rfr predictor and predictor handler
+    - added predictor api
+    - added utility script: parallel
+
 #### update 9#:
     - added fixture, team, manager, referee data handler
     - added functions to utility scripts
@@ -42,7 +47,6 @@
     - fixed a bug where wasn't saveing fixture stats properly if Possession wasn't on stats list
     - fixture dict table are now dict inside as well instead of json strings
     - now will download a season from start if we changed the season or match report version
-    
 
 #### update 8#:
     - bugs fix and small improvements
