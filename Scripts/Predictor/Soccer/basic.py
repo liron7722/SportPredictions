@@ -117,6 +117,8 @@ class Basic:
     def create(self):
         db = self.db_client.get_db('Data-Handling')
         competition_names = self.db_client.get_collections_names(db=db)
+        for col in ['Teams', 'Managers', 'Referee']:
+            competition_names.remove(col)
         for name in competition_names:
             self.log(f'Inner CMD: Create Model\tPredictor: {self.model_type}\tCompetition: {name}')
             # Load Competition
@@ -133,7 +135,9 @@ class Basic:
         df = DataFrame(data)
         del data
         collect()  # clean memory
-        df = df.drop(cols_to_drop, axis=1)
+        for col in cols_to_drop:
+            if col in df.columns:
+                df = df.drop(col, axis=1)
         self.y = dict()
         # Drop rest of the prediction columns
         for col in df.columns:

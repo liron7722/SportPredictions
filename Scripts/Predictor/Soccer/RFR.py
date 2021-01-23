@@ -1,7 +1,8 @@
+from numpy import int64
+from Scripts.Predictor.Soccer.basic import Basic
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import accuracy_score, classification_report
-from Scripts.Predictor.Soccer.basic import Basic
 
 
 class RFR(Basic):
@@ -12,17 +13,19 @@ class RFR(Basic):
         self.clear()
 
     def add_model(self, comp_key, key):
+        # Avoid Model what already in the memory
+        if comp_key in self.models.keys() and key in self.models[comp_key].keys():
+            self.log(f'{self.model_type} Model for {key} already loaded')
+            return
         super().add_model(comp_key, key)
         x = self.x
         y = self.y[key]
-        size = int(x.shape[0] * .8)
-        x_train = x[:size]
-        y_train = y[:size]
-        x_test = x[size:]
-        y_test = y[size:]
-
-        x_train = x_train.fillna(-999)
-        x_test = x_test.fillna(-999)
+        null_fill = -999
+        size = int(x.shape[0] * .70)
+        x_train = x[:size].fillna(null_fill)
+        y_train = y[:size].fillna(null_fill).astype(int64)
+        x_test = x[size:].fillna(null_fill)
+        y_test = y[size:].fillna(null_fill).astype(int64)
 
         rfr_model = RandomForestRegressor()
         parameters = {'n_estimators': [200],
@@ -34,7 +37,7 @@ class RFR(Basic):
         grid_obj = GridSearchCV(rfr_model, parameters,
                                 cv=7,
                                 n_jobs=-1,
-                                verbose=1)
+                                verbose=0)
         grid_obj = grid_obj.fit(x_train, y_train)
 
         # Set the clf to the best combination of parameters
@@ -50,5 +53,5 @@ class RFR(Basic):
         cr = classification_report(y_test, predictions, output_dict=True)
 
         # Save
-        self.save_to_memory(comp_key, key, accuracy, cr, rfr_model)
-        self.save_to_db(comp_key, key, accuracy, cr, rfr_model)
+        self.save_to_memory(comp_key, key, rfr_model, accuracy, cr)
+        self.save_to_db(comp_key, key, rfr_model, accuracy, cr)

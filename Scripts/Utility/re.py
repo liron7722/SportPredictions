@@ -10,7 +10,8 @@ def get_int_from_string(txt):
     if type(txt) is int:
         return txt
     elif type(txt) is str:
-        return int(findall('\d+', txt)[0]) if txt is not None else None
+        temp = findall('\d+', txt) if txt is not None else None
+        return int(temp[0]) if len(temp) == 1 else None
     elif type(txt) is list:
         for i in range(len(txt)):
             txt[i] = get_int_from_string(txt[i])
