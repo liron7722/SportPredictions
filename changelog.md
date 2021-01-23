@@ -37,6 +37,9 @@
     - added rfr predictor and predictor handler
     - added predictor api
     - added utility script: parallel
+    - Preventing unnecessary model creation
+    - dealing with null in predicion columns
+    - handling when teams in fixture got Possession key with out value
 
 #### update 9#:
     - added fixture, team, manager, referee data handler
