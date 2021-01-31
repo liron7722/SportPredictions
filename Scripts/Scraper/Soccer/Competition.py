@@ -127,7 +127,7 @@ class Competition(Basic):
             self.log(f'Added season')
             self.seasons_urls.append(url)
             temp = Season(key=self.key, url=url, info=info, logger=self.logger, db=self.db_client, path=self.path,
-                          to_scrape=to_scrape, fixture_version=fixture_version)
+                          to_scrape=to_scrape, fixture_version=fixture_version, comp_name=self.get_name())
             temp.run()
 
         else:  # season was loaded from db

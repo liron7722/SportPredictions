@@ -17,7 +17,7 @@ class Referee(Basic):
         self.log(f'Cmd: basic load')
         # Initialize
         seasons = {'AT': 'All Time'}  # All Time
-        collection_name = 'Referee'
+        collection_name = 'Referees'
         self.db_load(collection_name, seasons)
 
     # Read stats from fixture
@@ -80,7 +80,7 @@ class Referee(Basic):
         # Initialize
         competition = self.info['Competition']
         seasons = {'AT': 'All Time'}  # All Time
-        collection_name = 'Referee'
+        collection_name = 'Referees'
         # Update
         db = self.db_client.get_db(name=self.db_name)
         collection = self.db_client.get_collection(name=collection_name, db=db)

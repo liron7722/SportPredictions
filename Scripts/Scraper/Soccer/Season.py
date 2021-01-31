@@ -13,9 +13,10 @@ class Season(Basic):
     version = '1.0.0'
 
     def __init__(self, key, url, info, to_scrape: list = None, logger=None, db=None, path: str = None,
-                 fixture_version=MatchReport.version):
+                 fixture_version=MatchReport.version, comp_name=None):
         # initialize
         super().__init__(url=url, key=key, logger=logger, db=db, path=path)
+        self.comp_name = comp_name
         self.base_info = info
         self.fixtures = list()
         self.to_scrape = list() if to_scrape is None else to_scrape
@@ -73,7 +74,6 @@ class Season(Basic):
         fil = {"URL": data['URL']}  # filter
         data = encode_data(data)  # Numpy encoder
         # update
-        document = self.db_client
         if self.db_client.is_document_exist(collection=collection, fil=fil):
             self.db_client.update_document(collection=collection, fil=fil, data=data)
         # insert
@@ -94,6 +94,17 @@ class Season(Basic):
         self.upload_to_db(collection=collection, data=basic)
         for match in data['Advance Info']['Fixtures']:
             self.upload_to_db(collection=collection, data=match)
+
+    def upload_match(self, match):
+        if self.comp_name is not None:
+            season = self.get_base_info()['Season']
+            name = self.comp_name.replace('-Stats', '')
+            if self.db_client is not None:  # save data to db
+                db = self.db_client.get_db(name=name)
+                collection = self.db_client.get_collection(name=season, db=db)
+                self.upload_to_db(collection=collection, data=match)
+        else:
+            print('dude fix it')
 
     def to_json(self, name: str = None):
         super().to_json()
@@ -136,7 +147,8 @@ class Season(Basic):
     def add_fixture(self, url: str):
         temp = MatchReport(url)  # create fixture + scrape
         temp.parse()  # fixture parse
-        self.fixtures.append(temp)  # add fixture to the list
+        # self.fixtures.append(temp)  # add fixture to the list
+        self.upload_match(temp.to_json())
 
     def scrape_nationalities(self, url: str):
         text = connect(url=url, return_text=True)
