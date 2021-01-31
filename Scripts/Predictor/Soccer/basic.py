@@ -2,6 +2,7 @@ from gc import collect
 from pandas import DataFrame
 from pickle import loads, dumps
 from datetime import datetime as dt
+from Scripts.Utility.json import encode_data
 
 
 class Basic:
@@ -48,15 +49,23 @@ class Basic:
 
     def predict(self, comp_key, data):
         self.log(f'CMD: Predict\tPredictor: {self.model_type}\tCompetition: {comp_key}')
+        cols_to_drop = ['_id', 'Version', 'Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team',
+                        'HT_XG', 'AT_XG', 'HT_CS_Date', 'AT_CS_Date', 'HTM_CS_Date', 'ATM_CS_Date', 'HT_PS_Date',
+                        'AT_PS_Date', 'HTM_PS_Date', 'ATM_PS_Date']
+
         data = DataFrame(data, index=[0]) if type(data) is dict else data
+        for col in cols_to_drop:
+            if col in data.columns:
+                data = data.drop(col, axis=1)
+
         result = {'Status': 'Failed',
                   'Reason': 'No models for these competition',
                   'Predictions': {}}
         if comp_key in self.models.keys():
             result['Status'] = 'Success'
             result['Reason'] = 'None'
-            for key, item in self.models[comp_key].item():
-                result['Predictions'][key] = {'Prediction': item['Model'].predict(data),
+            for key, item in self.models[comp_key].items():
+                result['Predictions'][key] = {'Prediction': encode_data(item['Model'].predict(data)[0]),
                                               'Accuracy': item['Accuracy']}
         return result
 
@@ -117,13 +126,17 @@ class Basic:
     def create(self):
         db = self.db_client.get_db('Data-Handling')
         competition_names = self.db_client.get_collections_names(db=db)
-        for col in ['Teams', 'Managers', 'Referee']:
+        for col in ['Teams', 'Managers', 'Referees']:
             competition_names.remove(col)
         for name in competition_names:
             self.log(f'Inner CMD: Create Model\tPredictor: {self.model_type}\tCompetition: {name}')
             # Load Competition
             collection = self.db_client.get_collection(name, db)
             documents = self.db_client.get_documents_list(collection)
+            # Temporary memory fix
+            n = len(documents)
+            if n > 9500:
+                documents = documents[n - 9500:]
             self.prepare_data(documents)
             self.add_competition(name)
             self.clear()
