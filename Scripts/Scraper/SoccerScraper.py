@@ -2,6 +2,7 @@
 
 # Utility Imports
 import re
+import gc
 from Scripts.Utility.time import call_sleep, time_wrapper
 from Scripts.Utility.exceptions import PageNotLoaded, ParseError
 # Scraper Imports
@@ -18,6 +19,7 @@ class SoccerScraper(Scraper):
     def __init__(self, url: str = None):
         self.url = self.url if url is None else url
         super().__init__(url=self.url, name=self.key)
+        gc.enable()
 
     # Scrape
     def add_competition(self, key, url: str):

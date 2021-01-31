@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import gc
 import pandas as pd
 from bs4 import BeautifulSoup
 from Scripts.Utility.requests import connect
@@ -189,6 +190,7 @@ class Season(Basic):
         self.log(f'Going to scrape {len(scrape_list)} fixtures')
         self.to_scrape = list()
         for i in scrape_list:
+            gc.collect()
             try:
                 temp = html_urls[i].contents[-2]
             except IndexError:
