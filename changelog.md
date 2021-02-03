@@ -1,5 +1,4 @@
 ### Known Bugs:
-    - Model create dont work in new process
     - You tell me
     
 ### Coming  Up:
@@ -10,13 +9,26 @@
     - check read past season data properly
     - check calculated fixture data save properly - look at past season
 
-### ToDo List:  
+### ToDo List: 
+    - Better logger for api
+
+    - Data handling
+        - Handle players data
+
     - Data analysis
         - Auto Analayzers per column to predict
 
 	- Add ML: sklearn, pytourc, TensorFlow, Keras
+        - Make more models
+        - check for cloud solutions
 
 	- Website with on demend predictions
+        - UI
+        - Donate Option
+        - Upcoming and Archive of fixture predictions
+        - User management
+        - Payment method for checking predictions
+        
 
 	- Added more sports
 	    - NFL (Football)
@@ -28,11 +40,21 @@
 	    - ELK for logs
 	    - Dockers for each project part
         - Files struture check up
-	    - Move to cloud (aws) (Instanse for ELK \ DB \ Scraper \ Data analysis \ ML Modeling Separtly)
+	    - Move to cloud (aws) (Instanse for ELK \ Data analysis \ ML Modeling Separtly)
 	    - Auto restart
 	    - Monitor
 
 ### Updates:
+#### update 11#:
+    - change api location
+    - added new keys to predict
+    - now data handler dont create all time stats for teams and managers
+    - now data handler dont create extra time columns
+    - Soccer screaper and DB now work on aws instanses
+    - models drop null values in y make it more accurate
+    - better db document search
+    - data handler now add Head to Head stats from previus fixtures
+
 #### update 10#:
     - added rfr predictor and predictor handler
     - added predictor api

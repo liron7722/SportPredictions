@@ -7,7 +7,7 @@ from Scripts.Analyzers.Handlers.Soccer.Referee import Referee
 
 
 class Fixture(Basic):
-    version = '1.0.0'
+    version = '1.1.4'
 
     def __init__(self, fixture, info, db=None, logger=None):
         super().__init__(fixture=fixture, info=info, db=db, logger=logger)
@@ -30,6 +30,7 @@ class Fixture(Basic):
             self.referee = Referee(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
             self.calculated_stats = dict()
 
+    # Utility function
     def clean(self):
         self.home_team = None
         self.away_team = None
@@ -37,6 +38,22 @@ class Fixture(Basic):
         self.away_manager = None
         self.referee = None
         self.calculated_stats = dict()
+
+    # For Calculations
+    @staticmethod
+    def avg(temp):
+        if len(temp) == 0:
+            return 0
+        res = list(filter(None, temp))
+        return sum(res) / len(temp)
+
+    @staticmethod
+    def median(temp):
+        temp = list(filter(None, temp))
+        if len(temp) == 0:
+            return 0
+        temp.sort()
+        return temp[int(len(temp) / 2)]
 
     def general(self):
         self.log(f'Cmd: Getting general info')
@@ -46,7 +63,10 @@ class Fixture(Basic):
         self.stats['Attendance'] = self.fixture['Score Box']['Attendance'] \
             if 'Attendance' in self.fixture['Score Box'].keys() else 0
         self.stats['Home Team'] = self.home_team.name
+        self.stats['Home Manager'] = self.home_manager.name
         self.stats['Away Team'] = self.away_team.name
+        self.stats['Away Manager'] = self.away_manager.name
+        self.stats['Referee'] = self.referee.name
 
     # Save all the stats in one dict before calculation
     def save(self):
@@ -58,13 +78,14 @@ class Fixture(Basic):
             for season, stats in data.items():
                 if type(stats) is not dict:
                     self.stats[f'{key}_{season}'] = stats  # Last time played
-                else:
+                elif season != 'AT' or key == 'Ref':  # Disable All time for teams and managers
                     for inside_key in stats:
                         self.stats[f'{key}_{season}_{inside_key}'] = stats[inside_key]
 
     # Copy the columns we want to predict before calculation
     def copy_general_columns(self):
-        general_list = ['Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team']
+        general_list = ['Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Home Manager', 'Away Team',
+                        'Away Manager', 'Referee']
         self.calculated_stats['Version'] = self.version
         for key in general_list:
             self.calculated_stats[key] = self.stats[key]
@@ -72,10 +93,11 @@ class Fixture(Basic):
     # Copy the columns we want to predict before calculation
     def copy_predict_columns(self):
         predict_key = 'Pre'
-        half_index = {'First Half': 'HT', 'Half Time': 'FT', 'Full Time': 'ET'}  # Half Time, Full Time, Extra Time
+        # Half Time, Full Time, Extra Time
+        half_index = {'First Half': 'HT', 'Half Time': 'FT'}  # , 'Full Time': 'ET'}
         for half, half_key in half_index.items():
             temp = self.calc_events(half)
-            self.calculated_stats[f'{predict_key}_{half_key}_Re'] = temp['Go']['H'] - temp['Go']['A']  # Result
+            self.calculated_stats[f'{predict_key}_{half_key}_Res'] = temp['Go']['H'] - temp['Go']['A']  # Result
             for column, inner_column in temp.items():
                 for column_type, value in inner_column.items():
                     if column_type in ['H', 'A']:  # The rest are calc in avg and median
@@ -97,6 +119,50 @@ class Fixture(Basic):
                 else:
                     self.calculated_stats[f'{predict_key}_{team[0]}_{column_key}'] = None
 
+        temp = self.fixture['Events'].copy()
+        res = self.prep_event_prediction(temp)
+        for key, item in res.items():
+            if type(item) is int:
+                self.calculated_stats[f'{predict_key}_{key}'] = item
+            elif type(item) is dict:
+                side = item['side'][0]
+                other_side = 'H' if side == 'A' else 'A'
+                if 'min' in item.keys():
+                    self.calculated_stats[f'{predict_key}_{key}_{side}'] = item['min']
+                    self.calculated_stats[f'{predict_key}_{key}_{other_side}'] = -1  # wasn't first or last
+                else:
+                    self.calculated_stats[f'{predict_key}_{key}_{side}'] = 1  # was first or last
+                    self.calculated_stats[f'{predict_key}_{key}_{other_side}'] = 0  # wasn't first or last
+            elif type(item) is None:
+                for side in ['H', 'A']:
+                    self.calculated_stats[f'{predict_key}_{key}_{side}'] = None
+
+    @staticmethod
+    def prep_event_prediction(events):
+        res = {}
+        for event in ['G', 'C']:  # Goal, Card
+            for key in ['E', 'Le']:  # Early, Late
+                res[f'{key}_{event}'] = 0
+            for key in ['F', 'La', 'TF']:  # First, Last, Time of First
+                res[f'{key}_{event}'] = None
+        for half, item in events.items():
+            for event in item:
+                if event['Event'] in ['goal', 'own_goal', 'penalty_goal']:
+                    event_key = 'G'
+                elif event['Event'] in ['yellow_card', 'red_card', 'yellow_red_card']:
+                    event_key = 'C'
+                else:
+                    continue
+                if res[f'F_{event_key}'] is None:
+                    res[f'F_{event_key}'] = {'side': event['Side']}  # First Card
+                    res[f'TF_{event_key}'] = {'side': event['Side'], 'min': event['Minute']}  # Time of First Card
+                if int(event['Minute']) < 30:  # Early Card
+                    res[f'E_{event_key}'] += 1
+                elif int(event['Minute']) > 70:  # Late Card
+                    res[f'Le_{event_key}'] += 1
+                res[f'La_{event_key}'] = {'side': event['Side']}  # Last Card
+        return res
+
     def copy_extra_data(self):
         self.log(f'Cmd: extra_data')
         index = {'Home Team': 'HT', 'Away Team': 'AT'}
@@ -106,33 +172,59 @@ class Fixture(Basic):
             else:
                 self.calculated_stats[f'{index[key]}_XG'] = None  # score xg
 
+    def calculate_h2h(self, db_name='Data-Handling', n_games=7):
+        def sum_avg_med(games, additional_key='RT'):
+            temp = {}
+            res = {}
+            # SUM
+            for game in games:
+                for col_key, col_value in game.items():
+                    if 'Pre' in col_key:
+                        temp[col_key] = list() if col_key not in temp.keys() else temp[col_key]
+                        temp[col_key].append(col_value)
+            # Avg & Med
+            for col_key, values in temp.items():
+                data_key = col_key.replace('Pre_', 'H2H_')
+                res[f'{data_key}_{additional_key}_avg'] = self.avg(values)
+                res[f'{data_key}_{additional_key}_med'] = self.median(values)
+            return res
+
+        documents = list()
+        db = self.db_client.get_db(name=db_name)
+        collection_name = self.stats['Competition']
+        collection = self.db_client.get_collection(name=collection_name, db=db)
+        sort_key = "Score Box.DateTime.Date"  # sort by date
+        # RT = Regular Team (On the same side of current match)
+        # BT = Both Team sides (Last games where team can be on both sides)
+        team_filters = {'RT': {"Score Box.Home Team.Name": self.home_team.name,
+                               "Score Box.Away Team.Name": self.away_team.name},
+                        'BT': {'$or': [{"Score Box.Home Team.Name": self.home_team.name,
+                                        "Score Box.Away Team.Name": self.away_team.name},
+                                       {"Score Box.Home Team.Name": self.away_team.name,
+                                        "Score Box.Away Team.Name": self.home_team.name}]}}
+        for key, fil in team_filters.items():
+            # get data
+            documents.extend(self.db_client.get_documents_list(collection=collection, fil=fil, sort=sort_key,
+                                                               ascending=-1, limit=7))
+            # calculate
+            calculations = sum_avg_med(documents, additional_key=key)
+            # save
+            for col, value in calculations.items():
+                self.calculated_stats[col] = value
+
     # Calculate all the stats
     def calculate(self):
-        # Inner Functions - For Calculations
-        def avg(temp):
-            if len(temp) == 0:
-                return 0
-            res = list(filter(None, temp))
-            return sum(res) / len(temp)
-
-        def median(temp):
-            temp = list(filter(None, temp))
-            if len(temp) == 0:
-                return 0
-            temp.sort()
-            return temp[int(len(temp) / 2)]
-
         self.log(f'Cmd: calculate')
         # Copy and Calculate
         general_list = ['Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team']
         for data_key, value in self.stats.items():
-            if data_key in general_list:
+            if data_key in general_list or 'AT_' in data_key:
                 continue
 
             if type(value) is list:  # Calculate Average and Median
                 values = get_int_from_string(value)
-                self.calculated_stats[f'{data_key}_avg'] = avg(values)
-                self.calculated_stats[f'{data_key}_med'] = median(values)
+                self.calculated_stats[f'{data_key}_avg'] = self.avg(values)
+                self.calculated_stats[f'{data_key}_med'] = self.median(values)
             else:  # Copy Games, Wins, Draw, Loss
                 self.calculated_stats[f'{data_key}'] = value
 
@@ -167,6 +259,7 @@ class Fixture(Basic):
             self.copy_general_columns()
             self.copy_predict_columns()
             self.copy_extra_data()
+            self.calculate_h2h()
             self.calculate()
             self.upload()
             # Update stats in DB
@@ -179,8 +272,9 @@ class Fixture(Basic):
     def get_stats_for_prediction(self):
         self.log(f'Cmd: Getting fixture data for prediction')
         self.save()
-        self.calculate()
         self.copy_extra_data()
+        self.calculate_h2h()
+        self.calculate()
         result = self.calculated_stats.copy()
         self.clean()
         return result

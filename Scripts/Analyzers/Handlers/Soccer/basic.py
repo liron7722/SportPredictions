@@ -60,7 +60,7 @@ class Basic:
         # Initialize
         cs = self.info['Season']
         ps = get_prev_season_string(cs)
-        seasons = {'AT': 'All Time', 'CS': cs, 'PS': ps}  # All Time, Current Season, Past Season
+        seasons = {'CS': cs, 'PS': ps, 'AT': 'All Time'}  # All Time, Current Season, Past Season
         collection_name = 'Managers' if self.cls_type == 'Ma' else 'Teams'
         self.db_load(collection_name, seasons)
 
@@ -77,7 +77,7 @@ class Basic:
 
     # Get stats from db or default
     def get_stats(self, collection, competition, season, key):
-        self.log(f'Cmd: get_stats')
+        self.log(f'Cmd: get_stats for season: {season}')
         fil = {'Competition': competition, 'Season': season, 'Name': self.name}
         data = [] if collection is None else \
             [item for item in collection.find(fil)]
@@ -87,7 +87,7 @@ class Basic:
                 self.get_ltp(date)
             for unwanted_key in ['_id', 'Name', 'Competition', 'Season']:
                 data[0].pop(unwanted_key)
-            self.stats[key] = data[0]
+            self.stats[key] = data[0]  # get up to date stats
         else:
             self.stats[key] = self.get_default_stats()
 
@@ -96,7 +96,7 @@ class Basic:
         res = dict()
         for side in ['H', 'A']:  # Home, Away
             res[f'{side}_Ga'] = 0  # Games
-            for half in ['HT', 'FT', 'ET']:  # Half Time, Full Time, Extra Time
+            for half in ['HT', 'FT']:  # , 'ET']:  # Half Time, Full Time, Extra Time
                 for column in ['Wi', 'Dr', 'Lo']:  # Wins, Draws, Losses
                     res[f'{side}_{half}_{column}'] = 0
 
@@ -136,7 +136,8 @@ class Basic:
         self.read_extra_stats(seasons, self.side[0])
 
     def calc_events(self, half_key):
-        event_index = {'goal': 'Go', 'yellow_card': 'Ye', 'red_card': 'Re', 'yellow_red_card': '2Ye'}
+        event_index = {'goal': 'Go', 'own_goal': 'Go', 'penalty_goal': 'Go',
+                       'yellow_card': 'Ye', 'red_card': 'Re', 'yellow_red_card': '2Ye'}
         events = self.fixture['Events']
         # Initialize
         side = 'F' if self.side is not None else 'H'
@@ -168,7 +169,8 @@ class Basic:
 
     def read_events(self, seasons, side):
         self.log(f'Cmd: read_events')
-        half_index = {'First Half': 'HT', 'Half Time': 'FT', 'Full Time': 'ET'}  # Half Time, Full Time, Extra Time
+        # Half Time, Full Time, Extra Time
+        half_index = {'First Half': 'HT', 'Half Time': 'FT'}  # , 'Full Time': 'ET'}
 
         for half_key in half_index:
             temp = self.calc_events(half_key)

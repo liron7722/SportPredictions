@@ -1,4 +1,5 @@
 from gc import collect
+from numpy import mean
 from pandas import DataFrame
 from pickle import loads, dumps
 from datetime import datetime as dt
@@ -7,7 +8,7 @@ from Scripts.Utility.json import encode_data
 
 class Basic:
     ENV = 'Development'
-    version = '1.0.0'
+    version = '1.1.0'
     model_type = 'Basic'
 
     logger = None
@@ -101,6 +102,8 @@ class Basic:
         db = self.db_client.get_db('Prediction-Model')
         competition_names = self.db_client.get_collections_names(db=db)
         for name in competition_names:
+            if name == 'Parameters':
+                continue
             self.log(f'Inner CMD: Load Competition\tPredictor: {self.model_type}\tCompetition: {name}')
             # Load Competition
             collection = self.db_client.get_collection(name, db)
@@ -129,6 +132,8 @@ class Basic:
         for col in ['Teams', 'Managers', 'Referees']:
             competition_names.remove(col)
         for name in competition_names:
+            if name == 'A-League':
+                continue
             self.log(f'Inner CMD: Create Model\tPredictor: {self.model_type}\tCompetition: {name}')
             # Load Competition
             collection = self.db_client.get_collection(name, db)
@@ -145,6 +150,14 @@ class Basic:
         cols_to_drop = ['_id', 'Version', 'Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team',
                         'HT_XG', 'AT_XG', 'HT_CS_Date', 'AT_CS_Date', 'HTM_CS_Date', 'ATM_CS_Date', 'HT_PS_Date',
                         'AT_PS_Date', 'HTM_PS_Date', 'ATM_PS_Date']
+
+        for key in data[0].keys():
+            if 'Date' in key:
+                print(key)
+        for key in data[0].keys():
+            if ':' in key:
+                print(key)
+        print('Stop')
         df = DataFrame(data)
         del data
         collect()  # clean memory
@@ -155,7 +168,7 @@ class Basic:
         # Drop rest of the prediction columns
         for col in df.columns:
             if 'Pre' in col:
-                self.y[col] = df.pop(col)
+                self.y[col] = df.pop(col).dropna()
         self.x = df
 
     def is_model_exist(self, comp_key, key):
@@ -175,3 +188,44 @@ class Basic:
 
     def add_model(self, comp_key, key):
         self.log(f'CMD: Predictor: {self.model_type}\tCompetition: {comp_key}\tModel: {key}')
+
+    @staticmethod
+    def get_default_parameters():
+        pass
+
+    def get_parameters(self, key):
+        db = self.db_client.get_db('Prediction-Model')
+        collection = self.db_client.get_collection('Parameters', db)
+        fil = {'Name': key, 'Type': self.model_type}  # Filter
+        documents = self.db_client.get_documents_list(collection, fil=fil)
+        if len(documents) == 1:
+            return documents[0]['Parameters']
+
+        return self.get_default_parameters()
+
+    def save_parameters(self, key, parameters):
+        data = {'Name': key,
+                'Parameters': parameters,
+                'Type': self.model_type,
+                'Version': self.version,
+                'Created Time': dt.now()}
+
+        db = self.db_client.get_db('Prediction-Model')
+        collection = self.db_client.get_collection('Parameters', db)
+        fil = {'Name': key, 'Type': self.model_type}  # Filter
+        if self.db_client.is_document_exist(collection, fil):
+            self.db_client.update_document(collection, fil, data)  # Update
+        else:
+            self.db_client.insert_document(collection, data)  # Insert
+
+    @staticmethod
+    def evaluate(model, test_features, test_labels):
+        predictions = model.predict(test_features)
+        errors = abs(predictions - test_labels)
+        map_e = 100 * mean(errors / test_labels)
+        accuracy = 100 - map_e
+        print('Model Performance')
+        print('Average Error: {:0.4f} degrees.'.format(mean(errors)))
+        print('Accuracy = {:0.2f}%.'.format(accuracy))
+
+        return accuracy

@@ -30,7 +30,7 @@ class Referee(Basic):
 
     def read_events(self, seasons, _):
         self.log(f'Cmd: read_events')
-        half_index = {'First Half': 'HT', 'Half Time': 'FT', 'Full Time': 'ET'}  # Half Time, Full Time, Extra Time
+        half_index = {'First Half': 'HT', 'Half Time': 'FT'}  # , 'Full Time': 'ET'}  # Half Time, Full Time, Extra Time
         event_index = {'yellow_card': 'Ye', 'red_card': 'Re', 'yellow_red_card': '2Ye'}
         # Read and Save
         for season_key in seasons:
@@ -93,7 +93,7 @@ class Referee(Basic):
         for column in ['Ga']:  # Games
             res[f'{column}'] = 0
 
-        for half in ['HT', 'FT', 'ET']:  # Half Time, Full Time, Extra Time
+        for half in ['HT', 'FT']:  # , 'ET']:  # Half Time, Full Time, Extra Time
             for column in ['Ye', 'Re', '2Ye']:  # Yellow, Red, 2nd Yellow
                 for inner_column in ['Am', 'E', 'L']:  # Amount, Early, Late
                     res[f'{half}_{column}_{inner_column}'] = list()
