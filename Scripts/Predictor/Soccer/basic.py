@@ -82,6 +82,7 @@ class Basic:
         pickled_model = dumps(model)
         data = {'Name': key,
                 'Model': pickled_model,
+                'Parameters': model.best_params_,
                 'Accuracy': accuracy,
                 'CR': cr,
                 'Type': self.model_type,

@@ -78,4 +78,4 @@ class RFR(Basic):
         # Save
         self.save_to_memory(comp_key, key, rfr_model, accuracy, cr)
         self.save_to_db(comp_key, key, rfr_model, accuracy, cr)
-        self.save_parameters(key=key, parameters=parameters)
+        self.save_parameters(key=key, parameters=rfr_model.best_params_)
