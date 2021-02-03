@@ -1,8 +1,9 @@
-from flask import Flask, jsonify, request, render_template
+from os import environ
+from flask import Flask, jsonify, request, render_template, json
 from Scripts.Analyzers.Handlers.Soccer.DataHandler import DataHandler
 from Scripts.Predictor.Soccer.PredictorHandler import PredictorHandler
 
-ENV = 'Development'
+ENV = 'Development' if environ.get('ENV') != 'Production' else 'Production'
 
 # Init app
 app = Flask(__name__)
@@ -12,6 +13,7 @@ data_handler = DataHandler()
 
 # Init predictors
 predictor_handler = PredictorHandler()
+ph_info = predictor_handler.info()
 
 
 @app.route('/predict', methods=['POST'])
@@ -24,18 +26,30 @@ def predict():
     }
     fixture = {'Score Box': fixture_info}
     data = data_handler.get_fixture_data(info={'Competition': comp_key}, fixture=fixture)
-    return jsonify({'Info': fixture_info,
-                    'Prediction': predictor_handler.predict(comp_key=comp_key, data=data)})
+    res = {'Info': fixture_info,
+           'Prediction': predictor_handler.predict(comp_key=comp_key, data=data)}
+    response = app.response_class(
+        response=json.dumps(res),
+        status=200,
+        mimetype='application/json'
+    )
+    return response
 
 
 @app.route('/predict-info', methods=['GET'])
 def info():
-    return jsonify(predictor_handler.info())
+    return jsonify(ph_info)
+
+
+@app.route('/manual', methods=['GET'])
+def manual():
+    return render_template('home.html', data=ph_info)
 
 
 @app.route('/', methods=['GET'])
 def get():
-    return render_template('home.html')
+    return jsonify({'msg': 'Welcome to Soccer Prediction API',
+                    'documentation': 'https://www.lironrevah.tech/projects/sports-prediction-api/soccer'})
 
 
 def run():
