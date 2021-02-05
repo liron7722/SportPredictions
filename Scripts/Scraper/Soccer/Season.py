@@ -6,6 +6,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from Scripts.Utility.requests import connect
 from Scripts.Utility.json import str_to_dict, encode_data
+from Scripts.Utility.exceptions import PageNotLoaded, ParseError
 from Scripts.Scraper.Soccer.basic import Basic
 from Scripts.Scraper.Soccer.MatchReport import MatchReport
 
@@ -199,6 +200,7 @@ class Season(Basic):
                 continue
             try:
                 if html_urls[i].contents[-1] == 'Match Cancelled' \
+                        or temp.text == 'Match Postpone' \
                         or temp.text == 'Head-to-Head'\
                         or len(temp.attrs) != 2:
                     self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone or cancelled
@@ -208,6 +210,9 @@ class Season(Basic):
             except AttributeError:
                 if len(temp.attrs) != 2:  # 2 is attrs of the table spacer
                     self.to_scrape.append(i)  # fixture don't have match link - most likely postpone
+            except PageNotLoaded or ParseError:
+                self.to_scrape.append(i)  # fixture page not loaded or parse issue
+                self.logger.exception(f"Got issue with fixture at url: {url}")
 
     def scrape(self):
         self.parse_general_info()

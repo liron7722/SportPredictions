@@ -42,6 +42,8 @@ class Competition(Basic):
     # Load
     def load_seasons(self, season):
         self.log(f'Cmd: load_seasons')
+        if season is None:
+            return
         url = season['URL'].replace(self.base, '')
         if len(season['To Scrape']) > 0:
             basic = season.copy()
@@ -74,8 +76,9 @@ class Competition(Basic):
             if coll_name == 'Info':
                 continue
             collection = self.db_client.get_collection(name=coll_name, db=db)  # get collection
-            basic = collection.find({"Season": coll_name}).next()  # get season basic info
-            basic.pop('_id')  # pop document id
+            docs = self.db_client.get_documents_list(collection=collection, fil={"Season": coll_name})
+            basic = docs[0] if len(docs) == 1 else None  # get season basic info
+            basic.pop('_id') if type(basic) is dict else None  # pop document id
             self.load_seasons(season=basic)
             gc.collect()  # Tell Garbage Collector to release unreferenced memory
 
@@ -160,7 +163,7 @@ class Competition(Basic):
                 time_wrapper(func=self.add_season, logger=self.logger)(url=url, info=info)
                 self.log(f'Season {i + 1} of {len(scrape_list)} successfully scrape at Url: {url}', level=20)
             except PageNotLoaded and AttributeError and IndexError and Exception:
-                message = f'Error accord,\tSeason {i}/{len(scrape_list)} failed scrape at Url: {url}'
+                message = f'Error accord,\tSeason {i + 1}/{len(scrape_list)} failed scrape at Url: {url}'
                 self.logger.exception(message) if self.logger is not None else print(message)
                 if i not in self.to_scrape:  # avoiding duplicate
                     self.to_scrape.append(i)

@@ -56,7 +56,10 @@ class MatchReport(Basic):
             # Wins - Draws - Losses Record
             if '\n' not in temp.contents[4]:
                 values = temp.contents[4].text.split('-')
-                info_dict[key]['W_D_L'] = {'Wins': values[0], 'Draws': values[1], 'Losses': values[2]}
+                if len(values) == 2:
+                    info_dict[key]['W_D_L'] = {'Wins': values[0], 'Draws': 0, 'Losses': values[1]}
+                elif len(values) == 3:
+                    info_dict[key]['W_D_L'] = {'Wins': values[0], 'Draws': values[1], 'Losses': values[2]}
                 location_flag = 4
             else:
                 location_flag = 3
