@@ -22,9 +22,7 @@ class RFR(Basic):
                 'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
 
     def add_model(self, comp_key, key):
-        # Avoid Model what already in the memory
-        if comp_key == 'A-League':  # Todo Remove after fix in db
-            return
+        # Avoid Model that already in the memory
         if comp_key in self.models.keys() and key in self.models[comp_key].keys():
             self.log(f'{self.model_type} Model for {key} already loaded')
             return
@@ -53,7 +51,7 @@ class RFR(Basic):
         grid_obj = RandomizedSearchCV(estimator=rfr_model,
                                       param_distributions=parameters,
                                       n_iter=100,
-                                      cv=3,
+                                      cv=5,
                                       verbose=2,
                                       random_state=42,
                                       n_jobs=-1)
