@@ -1,9 +1,10 @@
 from gc import collect
 from numpy import mean
 from pandas import DataFrame
+from pymongo import errors
 from pickle import loads, dumps
 from datetime import datetime as dt
-from Scripts.Utility.json import encode_data
+from Scripts.Utility.json import encode_data, save
 
 
 class Basic:
@@ -92,10 +93,13 @@ class Basic:
         db = self.db_client.get_db('Prediction-Model')
         collection = self.db_client.get_collection(comp_key, db)
         fil = {'Name': key, 'Type': self.model_type}  # Filter
-        if self.db_client.is_document_exist(collection, fil):
-            self.db_client.update_document(collection, fil, data)  # Update
-        else:
-            self.db_client.insert_document(collection, data)  # Insert
+        try:
+            if self.db_client.is_document_exist(collection, fil):
+                self.db_client.update_document(collection, fil, data)  # Update
+            else:
+                self.db_client.insert_document(collection, data)  # Insert
+        except errors.DocumentTooLarge:
+            save(data=data, name=f'{key}_{comp_key}_{self.model_type}_{self.version}', path=f'{self.model_type}_Models')
 
     # Load
     def load(self):
@@ -139,10 +143,6 @@ class Basic:
             # Load Competition
             collection = self.db_client.get_collection(name, db)
             documents = self.db_client.get_documents_list(collection)
-            # Temporary memory fix
-            n = len(documents)
-            if n > 9500:
-                documents = documents[n - 9500:]
             self.prepare_data(documents)
             self.add_competition(name)
             self.clear()
@@ -152,13 +152,6 @@ class Basic:
                         'HT_XG', 'AT_XG', 'HT_CS_Date', 'AT_CS_Date', 'HTM_CS_Date', 'ATM_CS_Date', 'HT_PS_Date',
                         'AT_PS_Date', 'HTM_PS_Date', 'ATM_PS_Date']
 
-        for key in data[0].keys():
-            if 'Date' in key:
-                print(key)
-        for key in data[0].keys():
-            if ':' in key:
-                print(key)
-        print('Stop')
         df = DataFrame(data)
         del data
         collect()  # clean memory
