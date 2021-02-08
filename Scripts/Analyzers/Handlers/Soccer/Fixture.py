@@ -156,9 +156,10 @@ class Fixture(Basic):
                 if res[f'F_{event_key}'] is None:
                     res[f'F_{event_key}'] = {'side': event['Side']}  # First Card
                     res[f'TF_{event_key}'] = {'side': event['Side'], 'min': event['Minute']}  # Time of First Card
-                if int(event['Minute']) < 30:  # Early Card
+                minute = event['Minute'] if type(event['Minute']) is str else event['Minute']['Minute']
+                if int(minute) < 30:  # Early Card
                     res[f'E_{event_key}'] += 1
-                elif int(event['Minute']) > 70:  # Late Card
+                elif int(minute) > 70:  # Late Card
                     res[f'Le_{event_key}'] += 1
                 res[f'La_{event_key}'] = {'side': event['Side']}  # Last Card
         return res
