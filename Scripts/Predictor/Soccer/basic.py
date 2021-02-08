@@ -215,11 +215,11 @@ class Basic:
     @staticmethod
     def evaluate(model, test_features, test_labels):
         predictions = model.predict(test_features)
-        errors = abs(predictions - test_labels)
-        map_e = 100 * mean(errors / test_labels)
+        model_errors = abs(predictions - test_labels)
+        map_e = 100 * mean(model_errors / test_labels)
         accuracy = 100 - map_e
         print('Model Performance')
-        print('Average Error: {:0.4f} degrees.'.format(mean(errors)))
+        print('Average Error: {:0.4f} degrees.'.format(mean(model_errors)))
         print('Accuracy = {:0.2f}%.'.format(accuracy))
 
         return accuracy
