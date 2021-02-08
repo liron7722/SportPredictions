@@ -54,7 +54,7 @@ def get():
 
 def run():
     debug = True if ENV == 'Development' else False
-    app.run(debug=debug)
+    app.run(debug=debug, port=5005)
 
 
 # Run Server
