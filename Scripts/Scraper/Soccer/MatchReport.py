@@ -208,27 +208,27 @@ class MatchReport(Basic):
         # Major league with more info
         if len(self.df_tables) == 20:
             return {'Home Team': {
-                'Players stats': self.set_players_stats(self.df_tables[3:9]),
-                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[9]),
-                'Shots stats': self.set_shots_stats(self.df_tables[-2])
+                'Players stats': self.set_players_stats(self.df_tables[3:9].copy()),
+                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[9].copy()),
+                'Shots stats': self.set_shots_stats(self.df_tables[-2].copy())
             },
                 'Away Team': {
-                    'Players stats': self.set_players_stats(self.df_tables[10:16]),
-                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[16]),
-                    'Shots stats': self.set_shots_stats(self.df_tables[-1])
+                    'Players stats': self.set_players_stats(self.df_tables[10:16].copy()),
+                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[16].copy()),
+                    'Shots stats': self.set_shots_stats(self.df_tables[-1].copy())
             }}
         elif 4 < len(self.df_tables) < 8:  # Minor league with less info
             return {'Home Team': {
-                'Players stats': self.set_players_stats(self.df_tables[-4]),
-                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-3]),
+                'Players stats': self.set_players_stats(self.df_tables[-4].copy()),
+                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-3].copy()),
             },
                 'Away Team': {
-                    'Players stats': self.set_players_stats(self.df_tables[-2]),
-                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-1]),
+                    'Players stats': self.set_players_stats(self.df_tables[-2].copy()),
+                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-1].copy()),
                 }}
         elif 1 < len(self.df_tables) < 5:  # old fixture with less info
-            return {'Home Team': {'Players stats': self.set_players_stats(self.df_tables[-2])},
-                    'Away Team': {'Players stats': self.set_players_stats(self.df_tables[-1])}
+            return {'Home Team': {'Players stats': self.set_players_stats(self.df_tables[-2].copy())},
+                    'Away Team': {'Players stats': self.set_players_stats(self.df_tables[-1].copy())}
                     }
 
     def get_ref_info(self, values):  # Officials
