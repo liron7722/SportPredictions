@@ -31,7 +31,10 @@
 	- sudo apt install npm
 	- sudo npm install pm2@latest -g
 	- pm2 -v
-	- pm2 start main.py 1 --name soccer_scraper --interpreter python3
+	- pm2 startup
+	- pm2 start main_scraper.py --name Soccer_scraper --interpreter python3
+	- pm2 start main_api.py --name PredictionAPI --interpreter python3
+	- pm2 start main_handler.py --name Data_Handler --interpreter python3
 
 ### Phase 4:  
     - sudo apt-get install ufw
@@ -54,9 +57,11 @@
     - git clone https://github.com/liron7722/SportPredictions
 	- cd SportPredictions
 	- git checkout --track origin/development
-	- python3 -m venv venv
-	- pip3 install -r Requirements/scraper_requirements.txt
-	- sudo reboot now 
+	- sudo pip3 install -r Requirements/scraper_requirements.txt
+	- sudo pip3 install -r Requirements/handler_requirements.txt
+	- sudo pip3 install -r Requirements/‏predictor_requirements.txt
+	- sudo pip3 install -r Requirements/api_requirements.txt
+	- sudo reboot now
 
 
 ### Phase 7:  

@@ -1,6 +1,10 @@
 ### Known Bugs:
     - You tell me
-    
+    - fix an issue where major league cant be scraped - see bug file 1# in logs
+        -https://fbref.com/en/comps/22/schedule/Major-League-Soccer-Scores-and-Fixtures
+    - to fix requests.exceptions.ChunkedEncodingError: ('Connection broken: OSError("(104, \'ECONNRESET\')")' use the next link
+        - https://2.python-requests.org/en/master/api/#requests.Response.iter_content
+
 ### Coming  Up:
     - fix test script of season after json string to json update
     - fix match_fixture and season test files after changes
@@ -28,7 +32,6 @@
         - Upcoming and Archive of fixture predictions
         - User management
         - Payment method for checking predictions
-        
 
 	- Added more sports
 	    - NFL (Football)
@@ -45,6 +48,13 @@
 	    - Monitor
 
 ### Updates:
+#### update 12#:
+    - Season script now add non played fixture to the db
+    - Season script have better code structure
+    - MatchReport script now handle better the dataframe table
+    - fixture handler now update finished games for prediction site
+
+
 #### update 11#:
     - change api location
     - added new keys to predict
@@ -54,6 +64,9 @@
     - models drop null values in y make it more accurate
     - better db document search
     - data handler now add Head to Head stats from previus fixtures
+    - fixed an issue where there is only wins and loss in score box
+    - now will continue to scrape fixture even if one fixture get a parse or connection erorr
+    - bugs fix and typos
 
 #### update 10#:
     - added rfr predictor and predictor handler
