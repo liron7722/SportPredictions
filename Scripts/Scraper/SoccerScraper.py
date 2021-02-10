@@ -50,7 +50,7 @@ class SoccerScraper(Scraper):
                  f'Url: {self.url}')
         while loop:
             time_wrapper(func=self.scrape, logger=self.logger)()
-            call_sleep(days=1, logger=self.logger)
+            call_sleep(minutes=10, logger=self.logger)
 
 
 if __name__ == '__main__':

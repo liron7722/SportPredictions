@@ -64,7 +64,7 @@ class DataHandler:
     def load_db(self):
         self.log(f'Cmd: load_db')
         competition_names = self.db_client.get_db_names()
-        for key in ['admin', 'config', 'local', 'testing', 'Data-Handling', 'Prediction-Model',
+        for key in ['admin', 'config', 'local', 'testing', 'Data-Handling', 'Prediction-Model', 'Prediction-Site',
                     'Big-5-European-Leagues']:
             if key in competition_names:
                 competition_names.remove(key)  # pop utility db's
@@ -78,7 +78,7 @@ class DataHandler:
         self.log(f'Cmd: Data Handler run')
         while True:
             self.load_db()
-            call_sleep(days=1)
+            call_sleep(minutes=10)
 
 
 if __name__ == '__main__':
