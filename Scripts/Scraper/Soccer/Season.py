@@ -229,7 +229,7 @@ class Season(Basic):
                     or temp.text == 'Head-to-Head' \
                     or len(temp.attrs) != 2:
                 self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone or cancelled
-                self.append_for_prediction_site(temp_soup=item.contents)  # used for prediction site
+                self.append_for_prediction_site(temp_soup=item)  # used for prediction site
 
         except AttributeError:
             self.to_scrape.append(i)  # fixture don't have match link - most likely postpone
