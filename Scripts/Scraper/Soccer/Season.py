@@ -72,8 +72,8 @@ class Season(Basic):
                     new[header][key] = old[header][key]
         return new
 
-    def upload_to_db(self, collection, data):
-        fil = {"URL": data['URL']}  # filter
+    def upload_to_db(self, collection, data, fil=None):
+        fil = {"URL": data['URL']} if fil is None else fil  # filter
         data = encode_data(data)  # Numpy encoder
         # update
         if self.db_client.is_document_exist(collection=collection, fil=fil):
@@ -106,7 +106,7 @@ class Season(Basic):
                 collection = self.db_client.get_collection(name=season, db=db)
                 self.upload_to_db(collection=collection, data=match)
         else:
-            print('dude fix it')
+            print('No comp given at upload_match function')
 
     def to_json(self, name: str = None):
         super().to_json()
@@ -147,10 +147,39 @@ class Season(Basic):
         return res
 
     def add_fixture(self, url: str):
-        temp = MatchReport(url)  # create fixture + scrape
-        temp.parse()  # fixture parse
+        match_report = MatchReport(url)  # create fixture + scrape
+        match_report.parse()  # fixture parse
+        match_report_json = match_report.to_json()
         # self.fixtures.append(temp)  # add fixture to the list
-        self.upload_match(temp.to_json())
+        self.upload_match(match_report_json)
+
+    def append_for_prediction_site(self, temp_soup):
+        def get_fixture_details(fixture_soup):
+            if fixture_soup.contents[-2].text in ['Match Report', '']:  # Check if match  or
+                return None
+            date = fixture_soup.contents[2].text
+            time = fixture_soup.contents[3].text
+            home_team = fixture_soup.contents[4].text
+            away_team = fixture_soup.contents[8].text
+            venue = fixture_soup.contents[10].text
+            ref = fixture_soup.contents[11].text
+            notes = fixture_soup.contents[13].text
+            return {'Season': None, 'Date': date, 'Time': time, 'Home Team': home_team, 'Away Team': away_team,
+                    'Venue': venue, 'Referee': ref, 'Notes': notes}
+
+        # Initialize
+        data = get_fixture_details(temp_soup)
+        if data is None:
+            return
+        comp = self.comp_name
+        data['Season'] = self.get_base_info()['Season']
+        # Save
+        if self.db_client is not None:  # save data to db
+            db = self.db_client.get_db(name='Prediction-Site')
+            collection = self.db_client.get_collection(name=comp, db=db)
+            fil = {'Season': data['Season'], 'Date': data['Date'],
+                   'Home Team': data['Home Team'], 'Away Team': data['Away Team']}
+            self.upload_to_db(collection=collection, data=data, fil=fil)
 
     def scrape_nationalities(self, url: str):
         text = connect(url=url, return_text=True)
@@ -181,6 +210,42 @@ class Season(Basic):
 
         self.nationalities = res
 
+    def check_fixture_row_content(self, item, i, url):
+        try:
+            temp = item.contents[-2]
+            return temp
+        except IndexError:
+            message = f'Got error while getting match (row {i}) in match list\tAt url: {url}'
+            self.logger.exception(message) if self.logger is not None else print(message)
+            return None
+
+    def append_fixture_row(self, item, i, url, temp):
+        try:
+            if temp.text == 'Match Report':  # Got a match link
+                url = self.extract_url(temp.find('a').get('href'))  # Fixture url
+                self.add_fixture(url)
+            elif item.contents[-1].text == 'Match Cancelled' \
+                    or item.contents[-1].text == 'Match Postpone' \
+                    or temp.text == 'Head-to-Head' \
+                    or len(temp.attrs) != 2:
+                self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone or cancelled
+                self.append_for_prediction_site(temp_soup=item.contents)  # used for prediction site
+
+        except AttributeError:
+            self.to_scrape.append(i)  # fixture don't have match link - most likely postpone
+            if len(temp.attrs) == 2:  # 2 is attrs of the table spacer
+                self.logger.exception(f"Got issue with the code with url: {url}")
+        except PageNotLoaded or ParseError:
+            self.to_scrape.append(i)  # fixture page not loaded or parse issue
+            self.logger.exception(f"Got issue with fixture at url: {url}")
+
+    def handle_fixture_row(self, item, i, url):
+        gc.collect()
+        temp = self.check_fixture_row_content(item, i, url)
+        if temp is None:
+            return
+        self.append_fixture_row(item, i, url, temp)
+
     def scrape_fixtures(self, url: str):
         text = connect(url=url, return_text=True)
         soup = BeautifulSoup(text, "lxml")
@@ -191,28 +256,7 @@ class Season(Basic):
         self.log(f'Going to scrape {len(scrape_list)} fixtures')
         self.to_scrape = list()
         for i in scrape_list:
-            gc.collect()
-            try:
-                temp = html_urls[i].contents[-2]
-            except IndexError:
-                message = f'Got error while getting match (row {i}) in match list\tAt url: {url}'
-                self.logger.exception(message) if self.logger is not None else print(message)
-                continue
-            try:
-                if html_urls[i].contents[-1] == 'Match Cancelled' \
-                        or temp.text == 'Match Postpone' \
-                        or temp.text == 'Head-to-Head'\
-                        or len(temp.attrs) != 2:
-                    self.to_scrape.append(i)  # fixture don't have match link - yet to happen or postpone or cancelled
-                elif temp.text == 'Match Report':
-                    url = self.extract_url(temp.find('a').get('href'))  # Fixture url
-                    self.add_fixture(url)
-            except AttributeError:
-                if len(temp.attrs) != 2:  # 2 is attrs of the table spacer
-                    self.to_scrape.append(i)  # fixture don't have match link - most likely postpone
-            except PageNotLoaded or ParseError:
-                self.to_scrape.append(i)  # fixture page not loaded or parse issue
-                self.logger.exception(f"Got issue with fixture at url: {url}")
+            self.handle_fixture_row(html_urls[i], i, url)
 
     def scrape(self):
         self.parse_general_info()
