@@ -82,26 +82,27 @@ class Fixture(Basic):
                     for inside_key in stats:
                         self.stats[f'{key}_{season}_{inside_key}'] = stats[inside_key]
 
-    # Copy the columns we want to predict before calculation
-    def copy_general_columns(self):
+    def create_general_columns(self):
+        res = dict()
         general_list = ['Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Home Manager', 'Away Team',
                         'Away Manager', 'Referee']
-        self.calculated_stats['Version'] = self.version
+        res['Version'] = self.version
         for key in general_list:
-            self.calculated_stats[key] = self.stats[key]
+            res[key] = self.stats[key]
+        return res
 
-    # Copy the columns we want to predict before calculation
-    def copy_predict_columns(self):
+    def create_predict_columns(self):
+        res = dict()
         predict_key = 'Pre'
         # Half Time, Full Time, Extra Time
         half_index = {'First Half': 'HT', 'Half Time': 'FT'}  # , 'Full Time': 'ET'}
         for half, half_key in half_index.items():
             temp = self.calc_events(half)
-            self.calculated_stats[f'{predict_key}_{half_key}_Res'] = temp['Go']['H'] - temp['Go']['A']  # Result
+            res[f'{predict_key}_{half_key}_Res'] = temp['Go']['H'] - temp['Go']['A']  # Result
             for column, inner_column in temp.items():
                 for column_type, value in inner_column.items():
                     if column_type in ['H', 'A']:  # The rest are calc in avg and median
-                        self.calculated_stats[f'{predict_key}_{half_key}_{column}_{column_type}'] = value
+                        res[f'{predict_key}_{half_key}_{column}_{column_type}'] = value
 
         for team in ['Home Team', 'Away Team']:
             temp = self.fixture['Stats'][team].copy()
@@ -109,33 +110,40 @@ class Fixture(Basic):
                 if column in temp:
                     for column_type, column_type_key in {'Successful': 'Su', 'Total': 'To'}.items():
                         if type(temp[column]) is dict:
-                            self.calculated_stats[f'{predict_key}_{team[0]}_{column_key}_{column_type_key}'] = \
+                            res[f'{predict_key}_{team[0]}_{column_key}_{column_type_key}'] = \
                                 int(temp[column][column_type])
 
             temp = self.fixture['Extra Stats'][team].copy()
             for column, column_key in {'Fouls': 'Fo', 'Corners': 'Co', 'Offsides': 'Off', 'Tackles': 'Ta'}.items():
                 if column in temp:
-                    self.calculated_stats[f'{predict_key}_{team[0]}_{column_key}'] = int(temp[column])
+                    res[f'{predict_key}_{team[0]}_{column_key}'] = int(temp[column])
                 else:
-                    self.calculated_stats[f'{predict_key}_{team[0]}_{column_key}'] = None
+                    res[f'{predict_key}_{team[0]}_{column_key}'] = None
 
         temp = self.fixture['Events'].copy()
         res = self.prep_event_prediction(temp)
         for key, item in res.items():
             if type(item) is int:
-                self.calculated_stats[f'{predict_key}_{key}'] = item
+                res[f'{predict_key}_{key}'] = item
             elif type(item) is dict:
                 side = item['side'][0]
                 other_side = 'H' if side == 'A' else 'A'
                 if 'min' in item.keys():
-                    self.calculated_stats[f'{predict_key}_{key}_{side}'] = item['min']
-                    self.calculated_stats[f'{predict_key}_{key}_{other_side}'] = -1  # wasn't first or last
+                    res[f'{predict_key}_{key}_{side}'] = item['min']
+                    res[f'{predict_key}_{key}_{other_side}'] = -1  # wasn't first or last
                 else:
-                    self.calculated_stats[f'{predict_key}_{key}_{side}'] = 1  # was first or last
-                    self.calculated_stats[f'{predict_key}_{key}_{other_side}'] = 0  # wasn't first or last
+                    res[f'{predict_key}_{key}_{side}'] = 1  # was first or last
+                    res[f'{predict_key}_{key}_{other_side}'] = 0  # wasn't first or last
             elif type(item) is None:
                 for side in ['H', 'A']:
-                    self.calculated_stats[f'{predict_key}_{key}_{side}'] = None
+                    res[f'{predict_key}_{key}_{side}'] = None
+        return res
+
+    # Copy the columns we want to predict before calculation
+    def copy_general_and_prediction_columns(self):
+        for res in [self.create_general_columns(), self.create_predict_columns()]:
+            for key, value in res.items():
+                self.calculated_stats[key] = value
 
     @staticmethod
     def prep_event_prediction(events):
@@ -206,7 +214,7 @@ class Fixture(Basic):
         for key, fil in team_filters.items():
             # get data
             documents.extend(self.db_client.get_documents_list(collection=collection, fil=fil, sort=sort_key,
-                                                               ascending=-1, limit=7))
+                                                               ascending=-1, limit=n_games))
             # calculate
             calculations = sum_avg_med(documents, additional_key=key)
             # save
@@ -230,7 +238,7 @@ class Fixture(Basic):
                 self.calculated_stats[f'{data_key}'] = value
 
     # Upload calculated fixture stats to the db
-    def upload(self, db_name='Data-Handling'):
+    def update_all(self, db_name='Data-Handling'):
         self.log(f'Cmd: upload')
         fil = {'Competition': self.calculated_stats['Competition'], 'Season': self.calculated_stats['Season'],
                'Date': self.calculated_stats['Date'], 'Home Team': self.calculated_stats['Home Team'],
@@ -250,19 +258,33 @@ class Fixture(Basic):
         document = self.db_client.get_documents_list(collection=collection, fil=fil)
         return len(document) > 0 and document[0]['Version'] == self.version
 
+    def update_for_prediction_site(self):
+        data = self.create_general_columns()  # get a copy
+        comp = data.pop('Competition')  # get comp
+        data['Time'] = self.fixture['Score Box']['DateTime']['Time']  # add time
+        data['Results'] = self.create_predict_columns()  # get results copy
+        
+        if self.db_client is not None:  # save data to db
+            db = self.db_client.get_db(name='Prediction-Site')
+            collection = self.db_client.get_collection(name=comp, db=db)
+            fil = {'Season': data['Season'], 'Date': data['Date'],
+                   'Home Team': data['Home Team'], 'Away Team': data['Away Team']}
+            self.upload_to_db(collection=collection, data=data, fil=fil)
+
     def run(self):
         self.log(f'Cmd: Fixture Handler run')
         if self.calculated_flag is False or self.fixture['Version'] != MatchReport.version:
+            # Update Fixture info on prediction site db
+            self.update_for_prediction_site()
             # Create match stats before calculation
             self.general()
             self.save()
             # Calculate
-            self.copy_general_columns()
-            self.copy_predict_columns()
+            self.copy_general_and_prediction_columns()
             self.copy_extra_data()
             self.calculate_h2h()
             self.calculate()
-            self.upload()
+            self.update_all()
             # Update stats in DB
             for item in [self.home_team, self.away_team, self.home_manager, self.away_manager, self.referee]:
                 item.run()
