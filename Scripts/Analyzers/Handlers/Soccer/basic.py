@@ -243,7 +243,7 @@ class Basic:
                     self.update_data[season_key][f'{side}_{stats_index[key]}_{j}'].append(value)
 
     # Update db
-    def upload(self):
+    def update_all(self):
         self.log(f'Cmd: basic update')
         # Initialize
         competition = self.info['Competition']
@@ -258,18 +258,21 @@ class Basic:
 
     def update(self, competition, season, season_key, collection):
         fil = {'Competition': competition, 'Season': season, 'Name': self.name}
-        temp = self.update_data[season_key].copy()
-        temp['Name'] = self.name
-        temp['Competition'] = competition
-        temp['Season'] = season
-        temp['Date'] = self.fixture['Score Box']['DateTime']['Date']
+        data = self.update_data[season_key].copy()
+        data['Name'] = self.name
+        data['Competition'] = competition
+        data['Season'] = season
+        data['Date'] = self.fixture['Score Box']['DateTime']['Date']
+        self.upload_to_db(collection, data=data, fil=fil)
+
+    def upload_to_db(self, collection, data, fil):
         if self.db_client.is_document_exist(collection=collection, fil=fil):
-            self.db_client.update_document(collection=collection, fil=fil, data=temp)
+            self.db_client.update_document(collection=collection, fil=fil, data=data)
         else:
-            self.db_client.insert_document(collection=collection, data=temp)
+            self.db_client.insert_document(collection=collection, data=data)
 
     def run(self):
         self.log(f'Cmd: basic run')
         if self.name is not None:
             self.read_and_save()
-            self.upload()
+            self.update_all()

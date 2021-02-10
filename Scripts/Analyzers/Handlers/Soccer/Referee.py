@@ -75,7 +75,7 @@ class Referee(Basic):
                 self.update_data[season_key][f'{stat_key}'].append(value)
 
     # Update db
-    def upload(self):
+    def update_all(self):
         self.log(f'Cmd: basic update')
         # Initialize
         competition = self.info['Competition']
