@@ -171,7 +171,7 @@ class Season(Basic):
         data = get_fixture_details(temp_soup)
         if data is None:
             return
-        comp = self.comp_name
+        comp = self.comp_name.replace('-Stats', '')
         data['Season'] = self.get_base_info()['Season']
         # Save
         if self.db_client is not None:  # save data to db
