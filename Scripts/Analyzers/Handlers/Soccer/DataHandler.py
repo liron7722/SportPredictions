@@ -54,8 +54,11 @@ class DataHandler:
             for fixture in fixtures:
                 date_value = fixture['Score Box']['DateTime']['Date']
                 fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
-                temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
-                temp.run()
+                try:
+                    temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
+                    temp.run()
+                except Exception:
+                    self.logger.exception('Got new unknown exception')
                 collect()  # Tell Garbage Collector to release unreferenced memory
             collect()  # Tell Garbage Collector to release unreferenced memory
 
