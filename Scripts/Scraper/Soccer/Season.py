@@ -179,7 +179,8 @@ class Season(Basic):
             collection = self.db_client.get_collection(name=comp, db=db)
             fil = {'Season': data['Season'], 'Date': data['Date'],
                    'Home Team': data['Home Team'], 'Away Team': data['Away Team']}
-            self.upload_to_db(collection=collection, data=data, fil=fil)
+            if self.db_client.is_document_exist(collection=collection, fil=fil) is False:  # Only insert don't update
+                self.db_client.insert_document(collection=collection, fil=fil, data=data)
 
     def scrape_nationalities(self, url: str):
         text = connect(url=url, return_text=True)
