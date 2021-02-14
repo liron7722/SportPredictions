@@ -45,9 +45,9 @@ class DataHandler:
     def load_seasons(self, db, db_name, season_names):
         self.log(f'Cmd: load_seasons')
         season_names.sort()
-        for coll_name in season_names:
-            info = {'Competition': db_name, 'Season': coll_name}
-            collection = self.db_client.get_collection(name=coll_name, db=db)  # get collection
+        for season in season_names:
+            info = {'Competition': db_name, 'Season': season}
+            collection = self.db_client.get_collection(name=season, db=db)  # get collection
             sort_key = "Score Box.DateTime.Date"  # sort by date
             fixtures = self.db_client.get_documents_list(collection=collection, sort=sort_key, skip=1)  # get fixtures
             # Handle fixture
