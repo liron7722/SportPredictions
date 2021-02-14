@@ -89,55 +89,58 @@ class Fixture(Basic):
         res['Version'] = self.version
         for key in general_list:
             res[key] = self.stats[key]
+
         return res
 
     def create_predict_columns(self):
-        res = dict()
+        temp = dict()
+        response = dict()
         predict_key = 'Pre'
         # Half Time, Full Time, Extra Time
         half_index = {'First Half': 'HT', 'Half Time': 'FT'}  # , 'Full Time': 'ET'}
         for half, half_key in half_index.items():
-            temp = self.calc_events(half)
-            res[f'{predict_key}_{half_key}_Res'] = temp['Go']['H'] - temp['Go']['A']  # Result
-            for column, inner_column in temp.items():
+            events = self.calc_events(half)
+            temp[f'{predict_key}_{half_key}_Res'] = events['Go']['H'] - events['Go']['A']  # Result
+            for column, inner_column in events.items():
                 for column_type, value in inner_column.items():
                     if column_type in ['H', 'A']:  # The rest are calc in avg and median
-                        res[f'{predict_key}_{half_key}_{column}_{column_type}'] = value
+                        temp[f'{predict_key}_{half_key}_{column}_{column_type}'] = value
 
         for team in ['Home Team', 'Away Team']:
-            temp = self.fixture['Stats'][team].copy()
+            events = self.fixture['Stats'][team].copy()
             for column, column_key in {'Passing Accuracy': 'PA', 'Shots on Target': 'ST'}.items():
-                if column in temp:
+                if column in events:
                     for column_type, column_type_key in {'Successful': 'Su', 'Total': 'To'}.items():
-                        if type(temp[column]) is dict:
-                            res[f'{predict_key}_{team[0]}_{column_key}_{column_type_key}'] = \
-                                int(temp[column][column_type])
+                        if type(events[column]) is dict:
+                            temp[f'{predict_key}_{team[0]}_{column_key}_{column_type_key}'] = \
+                                int(events[column][column_type])
 
-            temp = self.fixture['Extra Stats'][team].copy()
+            events = self.fixture['Extra Stats'][team].copy()
             for column, column_key in {'Fouls': 'Fo', 'Corners': 'Co', 'Offsides': 'Off', 'Tackles': 'Ta'}.items():
-                if column in temp:
-                    res[f'{predict_key}_{team[0]}_{column_key}'] = int(temp[column])
+                if column in events:
+                    temp[f'{predict_key}_{team[0]}_{column_key}'] = int(events[column])
                 else:
-                    res[f'{predict_key}_{team[0]}_{column_key}'] = None
+                    temp[f'{predict_key}_{team[0]}_{column_key}'] = None
 
-        temp = self.fixture['Events'].copy()
-        res = self.prep_event_prediction(temp)
-        for key, item in res.items():
+        events = self.fixture['Events'].copy()
+        temp = self.prep_event_prediction(events)
+
+        for key, item in temp.items():
             if type(item) is int:
-                res[f'{predict_key}_{key}'] = item
+                response[f'{predict_key}_{key}'] = item
             elif type(item) is dict:
                 side = item['side'][0]
                 other_side = 'H' if side == 'A' else 'A'
                 if 'min' in item.keys():
-                    res[f'{predict_key}_{key}_{side}'] = item['min']
-                    res[f'{predict_key}_{key}_{other_side}'] = -1  # wasn't first or last
+                    response[f'{predict_key}_{key}_{side}'] = item['min']
+                    response[f'{predict_key}_{key}_{other_side}'] = -1  # wasn't first or last
                 else:
-                    res[f'{predict_key}_{key}_{side}'] = 1  # was first or last
-                    res[f'{predict_key}_{key}_{other_side}'] = 0  # wasn't first or last
+                    response[f'{predict_key}_{key}_{side}'] = 1  # was first or last
+                    response[f'{predict_key}_{key}_{other_side}'] = 0  # wasn't first or last
             elif type(item) is None:
                 for side in ['H', 'A']:
-                    res[f'{predict_key}_{key}_{side}'] = None
-        return res
+                    response[f'{predict_key}_{key}_{side}'] = None
+        return response
 
     # Copy the columns we want to predict before calculation
     def copy_general_and_prediction_columns(self):
@@ -274,10 +277,9 @@ class Fixture(Basic):
     def run(self):
         self.log(f'Cmd: Fixture Handler run')
         if self.calculated_flag is False or self.fixture['Version'] != MatchReport.version:
-            # Update Fixture info on prediction site db
-            self.update_for_prediction_site()
             # Create match stats before calculation
             self.general()
+            self.update_for_prediction_site()  # Update Fixture info on prediction site db
             self.save()
             # Calculate
             self.copy_general_and_prediction_columns()
