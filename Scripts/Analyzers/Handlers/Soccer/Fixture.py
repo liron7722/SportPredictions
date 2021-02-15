@@ -203,7 +203,7 @@ class Fixture(Basic):
 
         documents = list()
         db = self.db_client.get_db(name=db_name)
-        collection_name = self.stats['Competition']
+        collection_name = self.info['Competition']
         collection = self.db_client.get_collection(name=collection_name, db=db)
         sort_key = "Score Box.DateTime.Date"  # sort by date
         # RT = Regular Team (On the same side of current match)
