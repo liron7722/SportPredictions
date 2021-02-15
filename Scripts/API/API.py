@@ -1,5 +1,6 @@
 from os import environ
 from flask import Flask, jsonify, request, render_template, json
+from Scripts.Utility.parallel import run_job
 from Scripts.Analyzers.Handlers.Soccer.DataHandler import DataHandler
 from Scripts.Predictor.Soccer.PredictorHandler import PredictorHandler
 
@@ -26,7 +27,9 @@ def predict():
     }
     fixture = {'Score Box': fixture_info}
     data = data_handler.get_fixture_data(info={'Competition': comp_key}, fixture=fixture)
-    res = {'Info': fixture_info,
+    res = {'Home_Team': request.form['home_team_name'], 'Home_Team_Manager': request.form['home_team_manager'],
+           'Away_Team': request.form['away_team_name'], 'Away_Team_Manager': request.form['away_team_manager'],
+           'Referee': request.form['ref'], 'Competition': comp_key,
            'Prediction': predictor_handler.predict(comp_key=comp_key, data=data)}
     response = app.response_class(
         response=json.dumps(res),
@@ -55,6 +58,7 @@ def get():
 def run():
     debug = True if ENV == 'Development' else False
     app.run(debug=debug, port=5005)
+    # run_job(func=predict_db_fixture)
 
 
 # Run Server
