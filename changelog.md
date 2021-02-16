@@ -4,6 +4,7 @@
         -https://fbref.com/en/comps/22/schedule/Major-League-Soccer-Scores-and-Fixtures
     - to fix requests.exceptions.ChunkedEncodingError: ('Connection broken: OSError("(104, \'ECONNRESET\')")' use the next link
         - https://2.python-requests.org/en/master/api/#requests.Response.iter_content
+    -handle women and men leagues with the same name
 
 ### Coming  Up:
     - fix test script of season after json string to json update
@@ -53,7 +54,8 @@
     - Season script have better code structure
     - MatchReport script now handle better the dataframe table
     - fixture handler now update finished games for prediction site
-
+    - fixed bugs with data handler
+    - added predictor for prediction site data
 
 #### update 11#:
     - change api location

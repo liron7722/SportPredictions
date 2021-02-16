@@ -35,6 +35,8 @@
 	- pm2 start main_scraper.py --name Soccer_scraper --interpreter python3
 	- pm2 start main_api.py --name PredictionAPI --interpreter python3
 	- pm2 start main_handler.py --name Data_Handler --interpreter python3
+	- pm2 start main_pred.py --name Model_Predictor --interpreter python3
+	- pm2 start main_pred_update.py --name Prediction_Update_ --interpreter python3
 
 ### Phase 4:  
     - sudo apt-get install ufw
