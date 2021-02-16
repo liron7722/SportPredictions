@@ -31,6 +31,7 @@ def save(data, name: str = None, path: str = None):
     create_dir(path)
     # File output
     with open(path + name, 'w') as outfile:
+        data = data if type(data) is not object else data.decode("utf-8")
         dump(data, outfile, indent=4, ensure_ascii=True, cls=NpEncoder)
         print(f'File was save with the the name: {name} , on the path: {path}')
 
