@@ -262,16 +262,18 @@ class Fixture(Basic):
         return len(document) > 0 and document[0]['Version'] == self.version
 
     def update_for_prediction_site(self):
-        data = self.create_general_columns()  # get a copy
-        comp = data.pop('Competition')  # get comp
-        data['Time'] = self.fixture['Score Box']['DateTime']['Time']  # add time
-        data['Results'] = self.create_predict_columns()  # get results copy
-        
+        info = self.create_general_columns()  # get a copy
+        comp = info.pop('Competition')  # get comp
         if self.db_client is not None:  # save data to db
             db = self.db_client.get_db(name='Prediction-Site')
             collection = self.db_client.get_collection(name=comp, db=db)
-            fil = {'Season': data['Season'], 'Date': data['Date'],
-                   'Home Team': data['Home Team'], 'Away Team': data['Away Team']}
+            fil = {'Season': info['Season'], 'Date': info['Date'],
+                   'Home Team': info['Home Team'], 'Away Team': info['Away Team']}
+            data = self.db_client.get_documents_list(collection=collection, fil=fil)
+            data['Version'] = self.version
+            data['Attendance'] = self.stats['Attendance']
+            data['Time'] = self.fixture['Score Box']['DateTime']['Time']  # add time
+            data['Results'] = self.create_predict_columns()  # get results copy
             self.upload_to_db(collection=collection, data=data, fil=fil)
 
     def run(self):
