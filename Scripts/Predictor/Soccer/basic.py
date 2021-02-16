@@ -51,15 +51,11 @@ class Basic:
 
     def predict(self, comp_key, data):
         self.log(f'CMD: Predict\tPredictor: {self.model_type}\tCompetition: {comp_key}')
-        cols_to_drop = ['_id', 'Version', 'Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team',
-                        'HT_XG', 'AT_XG', 'HT_CS_Date', 'AT_CS_Date', 'HTM_CS_Date', 'ATM_CS_Date', 'HT_PS_Date',
-                        'AT_PS_Date', 'HTM_PS_Date', 'ATM_PS_Date']
-
         data = DataFrame(data, index=[0]) if type(data) is dict else data
-        for col in cols_to_drop:
+        for col in self.get_cols_to_drop():
             if col in data.columns:
                 data = data.drop(col, axis=1)
-
+        comp_key = 'All Competitions'
         result = {'Status': 'Failed',
                   'Reason': 'No models for these competition',
                   'Predictions': {}}
@@ -83,7 +79,7 @@ class Basic:
         pickled_model = dumps(model)
         data = {'Name': key,
                 'Model': pickled_model,
-                'Parameters': model.best_params_,
+                # 'Parameters': model.best_params_,
                 'Accuracy': accuracy,
                 'CR': cr,
                 'Type': self.model_type,
@@ -137,8 +133,8 @@ class Basic:
         for col in ['Teams', 'Managers', 'Referees']:
             competition_names.remove(col)
         for name in competition_names:
-            if name == 'A-League':
-                continue
+            if name != 'Bundesliga':  # TODO drop after bug fix in data handling
+                continue  # TODO Make models for all competitions together?
             self.log(f'Inner CMD: Create Model\tPredictor: {self.model_type}\tCompetition: {name}')
             # Load Competition
             collection = self.db_client.get_collection(name, db)
@@ -147,15 +143,17 @@ class Basic:
             self.add_competition(name)
             self.clear()
 
-    def prepare_data(self, data):
-        cols_to_drop = ['_id', 'Version', 'Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team',
-                        'HT_XG', 'AT_XG', 'HT_CS_Date', 'AT_CS_Date', 'HTM_CS_Date', 'ATM_CS_Date', 'HT_PS_Date',
-                        'AT_PS_Date', 'HTM_PS_Date', 'ATM_PS_Date']
+    @staticmethod
+    def get_cols_to_drop():
+        return ['_id', 'Version', 'Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team',
+                'Home Manager', 'Away Manager', 'Referee', 'HT_XG', 'AT_XG', 'HT_CS_Date', 'AT_CS_Date',
+                'HTM_CS_Date', 'ATM_CS_Date', 'HT_PS_Date', 'AT_PS_Date', 'HTM_PS_Date', 'ATM_PS_Date']
 
+    def prepare_data(self, data):
         df = DataFrame(data)
         del data
         collect()  # clean memory
-        for col in cols_to_drop:
+        for col in self.get_cols_to_drop():
             if col in df.columns:
                 df = df.drop(col, axis=1)
         self.y = dict()
