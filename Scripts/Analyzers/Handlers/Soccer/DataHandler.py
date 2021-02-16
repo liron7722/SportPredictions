@@ -46,6 +46,8 @@ class DataHandler:
         self.log(f'Cmd: load_seasons')
         season_names.sort()
         for season in season_names:
+            count = 0
+            self.log(f'handling season {season}')
             info = {'Competition': db_name, 'Season': season}
             collection = self.db_client.get_collection(name=season, db=db)  # get collection
             sort_key = "Score Box.DateTime.Date"  # sort by date
@@ -54,6 +56,8 @@ class DataHandler:
             for fixture in fixtures:
                 if 'Season' in fixture.keys():
                     continue
+                self.log(f'handling fixture no: {count}')
+                count += 1
                 date_value = fixture['Score Box']['DateTime']['Date']
                 fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
                 temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
