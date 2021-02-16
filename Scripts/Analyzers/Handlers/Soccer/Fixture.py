@@ -132,7 +132,8 @@ class Fixture(Basic):
                 side = item['side'][0]
                 other_side = 'H' if side == 'A' else 'A'
                 if 'min' in item.keys():
-                    response[f'{predict_key}_{key}_{side}'] = item['min']
+                    response[f'{predict_key}_{key}_{side}'] = item['min']  # TODO handle better? can cause issue later
+                    # TODO like Time of first
                     response[f'{predict_key}_{key}_{other_side}'] = -1  # wasn't first or last
                 else:
                     response[f'{predict_key}_{key}_{side}'] = 1  # was first or last
