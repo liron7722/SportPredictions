@@ -1,6 +1,5 @@
 from os import environ
 from flask import Flask, jsonify, request, render_template, json
-from Scripts.Utility.parallel import run_job
 from Scripts.Analyzers.Handlers.Soccer.DataHandler import DataHandler
 from Scripts.Predictor.Soccer.PredictorHandler import PredictorHandler
 
@@ -58,7 +57,6 @@ def get():
 def run():
     debug = True if ENV == 'Development' else False
     app.run(debug=debug, port=5005)
-    # run_job(func=predict_db_fixture)
 
 
 # Run Server
