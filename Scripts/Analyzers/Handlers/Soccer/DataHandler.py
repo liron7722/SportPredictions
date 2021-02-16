@@ -49,16 +49,15 @@ class DataHandler:
             info = {'Competition': db_name, 'Season': season}
             collection = self.db_client.get_collection(name=season, db=db)  # get collection
             sort_key = "Score Box.DateTime.Date"  # sort by date
-            fixtures = self.db_client.get_documents_list(collection=collection, sort=sort_key, skip=1)  # get fixtures
+            fixtures = self.db_client.get_documents_list(collection=collection, sort=sort_key, skip=0)  # get fixtures
             # Handle fixture
             for fixture in fixtures:
+                if 'Season' in fixture.keys():
+                    continue
                 date_value = fixture['Score Box']['DateTime']['Date']
                 fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
-                try:
-                    temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
-                    temp.run()
-                except Exception:
-                    self.logger.exception('Got new unknown exception')
+                temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
+                temp.run()
                 collect()  # Tell Garbage Collector to release unreferenced memory
             collect()  # Tell Garbage Collector to release unreferenced memory
 
