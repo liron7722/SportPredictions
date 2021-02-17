@@ -32,7 +32,7 @@ class Competition(Basic):
 
     def update_key(self):
         temp = self.soup.find('div', {'id': "meta"})
-        self.key = self.key.replace('-Stats', '')
+        self.key = self.key.replace('-Stats', ',')
         for i in range(len(temp.contents[3])):
             try:
                 if 'Governing Country: ' in temp.contents[3].contents[i].text:
@@ -43,6 +43,7 @@ class Competition(Basic):
                     self.key += f'-{gender}'
             except AttributeError:
                 pass
+        self.key = self.key.replace(' ', '')
 
     # Getters
     def get_seasons_as_json(self):
