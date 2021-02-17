@@ -42,11 +42,11 @@ class DataHandler:
 
     # Load
     @time_wrapper
-    def load_seasons(self, db, db_name, season_names):
+    def load_seasons(self, db, db_name, season_names, output_coll):
         self.log(f'Cmd: load_seasons')
         season_names.sort()
         for season in season_names:
-            count = 0
+            count = 1
             self.log(f'handling season {season}')
             info = {'Competition': db_name, 'Season': season}
             collection = self.db_client.get_collection(name=season, db=db)  # get collection
@@ -54,15 +54,18 @@ class DataHandler:
             fixtures = self.db_client.get_documents_list(collection=collection, sort=sort_key, skip=0)  # get fixtures
             # Handle fixture
             for fixture in fixtures:
-                if 'Season' in fixture.keys():
-                    continue
                 self.log(f'handling fixture no: {count}')
-                count += 1
-                date_value = fixture['Score Box']['DateTime']['Date']
-                fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
-                temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
-                temp.run()
-                collect()  # Tell Garbage Collector to release unreferenced memory
+                try:
+                    date_value = fixture['Score Box']['DateTime']['Date']
+                    fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
+                    temp = Fixture(fixture=fixture, info=info, coll=output_coll, db=self.db_client, logger=self.logger)
+                    temp.run()
+                except Exception:
+                    self.logger.exception(f'Got New error in data handling process comp: {db_name}\tseason: {season}\t'
+                                          f'no: {count}')
+                finally:
+                    count += 1
+                    collect()  # Tell Garbage Collector to release unreferenced memory
             collect()  # Tell Garbage Collector to release unreferenced memory
 
     # DB Load
@@ -74,10 +77,12 @@ class DataHandler:
                     'Big-5-European-Leagues']:
             if key in competition_names:
                 competition_names.remove(key)  # pop utility db's
+        output_db = self.db_client.get_db(name='Data-Handling')
         for db_name in competition_names:
+            output_coll = self.db_client.get_collection(name=db_name, db=output_db)
             db = self.db_client.get_db(name=db_name)  # get db
             season_names = self.db_client.get_collections_names(db=db)
-            self.load_seasons(db, db_name, season_names)
+            self.load_seasons(db, db_name, season_names, output_coll)
             collect()  # Tell Garbage Collector to release unreferenced memory
 
     def run(self):
