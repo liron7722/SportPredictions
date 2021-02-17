@@ -28,6 +28,21 @@ class Competition(Basic):
         r_text = connect(url=self.url)
         page_text = r_text.replace('<!--\n', '')
         self.soup = BeautifulSoup(page_text, "lxml")
+        self.update_key()
+
+    def update_key(self):
+        temp = self.soup.find('div', {'id': "meta"})
+        self.key = self.key.replace('-Stats')
+        for i in range(len(temp.contents[3])):
+            try:
+                if 'Governing Country: ' in temp.contents[3].contents[i].text:
+                    country = temp.contents[3].contents[i].text.replace('Governing Country: ', '')[:-3]
+                    self.key += f'-{country}'
+                elif 'Gender: ' in temp.contents[3].contents[i].text:
+                    gender = temp.contents[3].contents[i].text.replace('Gender: ', '')
+                    self.key += f'-{gender}'
+            except AttributeError:
+                pass
 
     # Getters
     def get_seasons_as_json(self):
