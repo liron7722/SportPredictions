@@ -42,7 +42,7 @@ class DB:
         return db
 
     def get_collection(self, name: str, db):
-        collection = db.get_collection(name)
+        collection = db.get_collection(str(name))
         self.log(f'got collection: {name}')
         return collection
 
