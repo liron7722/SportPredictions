@@ -9,10 +9,11 @@ from Scripts.Analyzers.Handlers.Soccer.Referee import Referee
 class Fixture(Basic):
     version = '1.1.4'
 
-    def __init__(self, fixture, info, db=None, logger=None):
+    def __init__(self, fixture, info, coll=None, db=None, logger=None):
         super().__init__(fixture=fixture, info=info, db=db, logger=logger)
         self.info = info
         self.fixture = fixture
+        self.coll = coll
         fil = {'Competition': info['Competition'], 'Season': info['Season'],
                'Date': fixture['Score Box']['DateTime']['Date'],
                'Home Team': fixture['Score Box']['Home Team']['Name'],
@@ -256,9 +257,12 @@ class Fixture(Basic):
             self.db_client.insert_document(collection=collection, data=self.calculated_stats)
 
     def is_match_calculated(self, fil, db_name='Data-Handling'):
-        db = self.db_client.get_db(name=db_name)
-        collection_name = self.info['Competition']
-        collection = self.db_client.get_collection(name=collection_name, db=db)
+        if self.coll is None:
+            db = self.db_client.get_db(name=db_name)
+            collection_name = self.info['Competition']
+            collection = self.db_client.get_collection(name=collection_name, db=db)
+        else:
+            collection = self.coll
         document = self.db_client.get_documents_list(collection=collection, fil=fil)
         return len(document) > 0 and document[0]['Version'] == self.version
 
