@@ -1,9 +1,15 @@
 from os import environ
 from flask import Flask, jsonify, request, render_template, json
+from Scripts.Utility.logger import Logger
+from Scripts.Utility.decorators import log_wrapper
 from Scripts.Analyzers.Handlers.Soccer.DataHandler import DataHandler
 from Scripts.Predictor.Soccer.PredictorHandler import PredictorHandler
 
-ENV = 'Development' if environ.get('ENV') != 'Production' else 'Production'
+
+ENV = environ.get('ENV') or 'Production'
+
+# Logger
+logger = Logger(name='sports_prediction_api')
 
 # Init app
 app = Flask(__name__)
@@ -17,6 +23,7 @@ ph_info = predictor_handler.info()
 
 
 @app.route('/predict', methods=['POST'])
+@log_wrapper(func_name='get', request=request, logger=logger)
 def predict():
     comp_key = request.form['competition'].replace(' ', '-')
     fixture_info = {
@@ -39,24 +46,26 @@ def predict():
 
 
 @app.route('/predict-info', methods=['GET'])
+@log_wrapper(func_name='get', request=request, logger=logger)
 def info():
     return jsonify(ph_info)
 
 
 @app.route('/manual', methods=['GET'])
+@log_wrapper(func_name='get', request=request, logger=logger)
 def manual():
     return render_template('home.html', data=ph_info)
 
 
 @app.route('/', methods=['GET'])
+@log_wrapper(func_name='get', request=request, logger=logger)
 def get():
     return jsonify({'msg': 'Welcome to Soccer Prediction API',
                     'documentation': 'https://www.lironrevah.tech/projects/sports-prediction-api/soccer'})
 
 
 def run():
-    debug = True if ENV == 'Development' else False
-    app.run(debug=debug, port=5005)
+    app.run(debug=ENV == 'Development', port=5005)
 
 
 # Run Server
