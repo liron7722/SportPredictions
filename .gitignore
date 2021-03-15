@@ -75,7 +75,6 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-*.ipynb
 .ipynb_checkpoints
 
 # IPython
@@ -105,15 +104,11 @@ celerybeat.pid
 # Environments
 .env
 .venv
-testVenv/
-ml_venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
-3.8venv/
-wandb/
 
 # Spyder project settings
 .spyderproject
@@ -132,14 +127,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-.idea
-.vscode
-
-# Documentions
-Example.png
-Environment variables.txt
-
-# Products
-Products
-Logs
