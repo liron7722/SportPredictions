@@ -1,10 +1,7 @@
 ### Known Bugs:
     - You tell me
-    - fix an issue where major league cant be scraped - see bug file 1# in logs
-        -https://fbref.com/en/comps/22/schedule/Major-League-Soccer-Scores-and-Fixtures
     - to fix requests.exceptions.ChunkedEncodingError: ('Connection broken: OSError("(104, \'ECONNRESET\')")' use the next link
         - https://2.python-requests.org/en/master/api/#requests.Response.iter_content
-    -handle women and men leagues with the same name
 
 ### Coming  Up:
     - fix test script of season after json string to json update
@@ -15,8 +12,6 @@
     - check calculated fixture data save properly - look at past season
 
 ### ToDo List: 
-    - Better logger for api
-
     - Data handling
         - Handle players data
 
@@ -41,14 +36,18 @@
         - NHL (Hockey)
         
     - Miscellaneous
-	    - ELK for logs
 	    - Dockers for each project part
         - Files struture check up
+        - Code struture and comments check up
 	    - Move to cloud (aws) (Instanse for ELK \ Data analysis \ ML Modeling Separtly)
-	    - Auto restart
-	    - Monitor
+        - auto reload after aws instance restart?
+	    - Monitor with email at start and restart
 
 ### Updates:
+#### update 13#:
+    - add elastic support for logger
+    - add decorators
+
 #### update 12#:
     - Season script now add non played fixture to the db
     - Season script have better code structure
@@ -56,6 +55,8 @@
     - fixture handler now update finished games for prediction site
     - fixed bugs with data handler
     - added predictor for prediction site data
+    - handled women and men leagues with the same name
+    - fix an issue where league season was int and not str when sent to db causing not to scrape that season
 
 #### update 11#:
     - change api location
