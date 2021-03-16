@@ -58,7 +58,7 @@ class Logger:
         create_dir(path)
         file_handler = logging.handlers.RotatingFileHandler(path + name, maxBytes=10485760, backupCount=3)
         file_handler.setFormatter(formatter)
-        
+
         # adding Handlers
         new_logger.addHandler(file_handler)
         new_logger.addHandler(stream_handler)
@@ -84,14 +84,20 @@ class Logger:
                 "level": self.log_level_dict[level] if level in self.log_level_dict.keys() else level,
                 "message": message,
                 "exception": exception}
-            r = requests.post(url=f'{ELASTIC_URL}{self._name}/_doc/', data=dumps(dict_msg), headers=headers)
-            print(f'log sent to Index {self._name}') if 200 <= r.status_code < 300 else print(
-                f'log was not sent to Index {self._name}')
+            try:
+                r = requests.post(url=f'{ELASTIC_URL}{self._name}/_doc/', data=dumps(dict_msg), headers=headers)
+                print(f'log sent to Index {self._name}') if 200 <= r.status_code < 300 else print(
+                    f'log was not sent to Index {self._name}')
+            except requests.exceptions.ConnectionError:
+                print('Elastic Server is down, could not send the log')
 
     # Elastic Handling functions
     def elastic_initialize(self, api: bool = True):
-        self.elastic_create_index()
-        self.elastic_index_mapping(api=api)
+        try:
+            self.elastic_create_index()
+            self.elastic_index_mapping(api=api)
+        except requests.exceptions.ConnectionError:
+            print('Elastic Server is down, could not initialize')
 
     def elastic_create_index(self):
         r = requests.put(url=f'{ELASTIC_URL}{self._name}')
@@ -105,36 +111,36 @@ class Logger:
     def elastic_index_mapping(self, api: bool = True):
         headers = {'Content-Type': 'application/json'}
         api_index_mapping = {
-                "properties": {
-                    "level": {
-                        "type": "keyword"
-                    },
-                    "message": {
-                        "type": "nested",
-                        "properties": {
-                            'requested_function': {"type": "keyword"},
-                            'method': {"type": "keyword"},
-                            'user_agent': {"type": "keyword"},
-                            'content_type': {"type": "keyword"},
-                            'charset': {"type": "keyword"},
-                            'url': {"type": "keyword"},
-                            'remote_address': {"type": "keyword"}
-                        }
-                    },
-                    "exception": {
-                        "type": "text",
-                        "fields": {
-                            "raw": {
-                                "type": "keyword"
-                            }
-                        }
-                    },
-                    "date": {
-                        "type": "date",
-                        "format": "yyyy-MM-dd HH:mm:ss"
+            "properties": {
+                "level": {
+                    "type": "keyword"
+                },
+                "message": {
+                    "type": "nested",
+                    "properties": {
+                        'requested_function': {"type": "keyword"},
+                        'method': {"type": "keyword"},
+                        'user_agent': {"type": "keyword"},
+                        'content_type': {"type": "keyword"},
+                        'charset': {"type": "keyword"},
+                        'url': {"type": "keyword"},
+                        'remote_address': {"type": "keyword"}
                     }
+                },
+                "exception": {
+                    "type": "text",
+                    "fields": {
+                        "raw": {
+                            "type": "keyword"
+                        }
+                    }
+                },
+                "date": {
+                    "type": "date",
+                    "format": "yyyy-MM-dd HH:mm:ss"
                 }
             }
+        }
         default_index_mapping = {
             "properties": {
                 "level": {
