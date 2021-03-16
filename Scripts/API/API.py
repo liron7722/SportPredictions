@@ -23,7 +23,7 @@ ph_info = predictor_handler.info()
 
 
 @app.route('/predict', methods=['POST'])
-@log_wrapper(func_name='get', request=request, logger=logger)
+@log_wrapper(func_name='predict', request=request, logger=logger)
 def predict():
     comp_key = request.form['competition'].replace(' ', '-')
     fixture_info = {
@@ -46,28 +46,24 @@ def predict():
 
 
 @app.route('/predict-info', methods=['GET'])
-@log_wrapper(func_name='get', request=request, logger=logger)
+@log_wrapper(func_name='predict_info', request=request, logger=logger)
 def info():
     return jsonify(ph_info)
 
 
 @app.route('/manual', methods=['GET'])
-@log_wrapper(func_name='get', request=request, logger=logger)
+@log_wrapper(func_name='manual', request=request, logger=logger)
 def manual():
     return render_template('home.html', data=ph_info)
 
 
 @app.route('/', methods=['GET'])
-@log_wrapper(func_name='get', request=request, logger=logger)
+@log_wrapper(func_name='home', request=request, logger=logger)
 def get():
     return jsonify({'msg': 'Welcome to Soccer Prediction API',
                     'documentation': 'https://www.lironrevah.tech/projects/sports-prediction-api/soccer'})
 
 
-def run():
-    app.run(debug=ENV == 'Development', port=5005)
-
-
 # Run Server
 if __name__ == '__main__':
-    run()
+    app.run(debug=ENV == 'Development', port=5005)
