@@ -16,7 +16,7 @@ def track_time_spent(func_name):
     return decorator
 
 
-def log_wrapper(func_name, request, logger: Logger):
+def log_wrapper(func_name, request=None, logger: Logger = None):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
