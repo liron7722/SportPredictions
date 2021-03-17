@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from time import time, sleep
+from Scripts.Utility.logger import Logger
 
 
 def change_date_format(date_string, fmt='%A %B %d, %Y'):
@@ -39,7 +40,7 @@ def time_measure(total_time):
     return total_time, unit
 
 
-def time_wrapper(func, logger=None):
+def time_wrapper(func, logger: Logger = None):
     # Decorator that reports the execution time.
     def wrap(*args, **kwargs):
         start = time()
@@ -49,10 +50,7 @@ def time_wrapper(func, logger=None):
 
         # Print | Log
         msg = f'This operation of {func.__name__} took {round(total_time, 2)} {unit}'
-        if logger is not None:
-            logger.debug(msg)
-        else:
-            print(msg)
+        logger.log(msg, level=10) if logger is not None else print(msg)
 
         return result
     return wrap
