@@ -64,6 +64,10 @@ def get():
                     'documentation': 'https://www.lironrevah.tech/projects/sports-prediction-api/soccer'})
 
 
+def run():
+    app.run(debug=ENV == 'Development', port=5005)
+
+
 # Run Server
 if __name__ == '__main__':
-    app.run(debug=ENV == 'Development', port=5005)
+    run()
