@@ -7,6 +7,7 @@ import logging.handlers
 from json import dumps
 from datetime import datetime
 from Scripts.Utility.path import create_dir
+from traceback import format_exc as traceback_string
 
 ENV = os.environ.get('ENV') or 'Production'
 ELASTIC_URL = os.environ.get('ELASTIC_URL') or 'http://localhost:9200/'
@@ -18,12 +19,8 @@ class Logger:
     _name: str = None
     _logger: logging = None
     _elastic_flag: bool = False
-
-    log_level_dict = {10: logging.getLevelName(10),
-                      20: logging.getLevelName(20),
-                      30: logging.getLevelName(30),
-                      40: logging.getLevelName(40),
-                      50: logging.getLevelName(50)}
+    _logger_time_fmt = '%Y-%m-%d %H:%M:%S'
+    _elastic_time_fmt = '%Y-%m-%d %H:%M:%S:%f'
 
     def __init__(self, name: str, path: str = None, logger=None, elastic: bool = True, api: bool = True):
         self._name = name
@@ -38,17 +35,16 @@ class Logger:
     # input - logName as string, logPath as string, logger as logging class
     # output - logger as logging class
     # do - set logger settings
-    @staticmethod
-    def start(log_name: str, log_path: str = None) -> logging:
+    def start(self, log_name: str, log_path: str = None) -> logging:
         path = log_path if log_path is not None else BASE_PATH
-        name = log_name if log_name is not None else "NoName.log"
+        name = f'{log_name}.log' if log_name is not None else "NoName.log"
         new_logger = logging.getLogger(name)
 
         # Initialize logger
         new_logger.setLevel(logging.DEBUG)  # level per system status
         msg = '%(asctime)s %(levelname)s %(module)s: %(message)s'
 
-        formatter = logging.Formatter(msg, datefmt='%d-%m-%Y %H-%M-%S')
+        formatter = logging.Formatter(msg, datefmt=self._logger_time_fmt)
 
         # Stream Handler - cmd line
         stream_handler = logging.StreamHandler()
@@ -68,26 +64,33 @@ class Logger:
 
     # Logs functions
     def log(self, message, level: int = 10):
-        self.log_to_logger(message=dumps(message), level=level)
-        self.log_to_elastic(message=message, level=level, exception=None)
+        traceback_msg = traceback_string()
+        traceback_msg = None if 'NoneType: None' in traceback_msg else traceback_msg
+        self.log_to_logger(message=dumps(message) if type(message) is dict else message, level=level,
+                           exception=traceback_msg)
+        self.log_to_elastic(message=message, level=level, exception=traceback_msg)
 
-    def log_to_logger(self, message: str, level: int = 10):
+    def log_to_logger(self, message: str, level: int = 10, exception: str = None):
         if self._logger is not None:
-            level = 20 if ENV == 'Production' and level == 10 else level
             self._logger.log(level, message)
+            if exception is not None:
+                self._logger.log(level, exception)
+        else:
+            print(message)
+            print(exception)
 
-    def log_to_elastic(self, message, level: int = 10, exception: Exception = None):
+    def log_to_elastic(self, message, level: int = 10, exception: str = None):
         headers = {'Content-Type': 'application/json'}
         if self._elastic_flag:
             dict_msg = {
-                "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                "level": self.log_level_dict[level] if level in self.log_level_dict.keys() else level,
+                "time": datetime.now().strftime(self._elastic_time_fmt),
+                "level": logging.getLevelName(level),
                 "message": message,
                 "exception": exception}
             try:
                 r = requests.post(url=f'{ELASTIC_URL}{self._name}/_doc/', data=dumps(dict_msg), headers=headers)
-                print(f'log sent to Index {self._name}') if 200 <= r.status_code < 300 else print(
-                    f'log was not sent to Index {self._name}')
+                if r.status_code >= 300:
+                    print(f'log was not sent to Index {self._name}')
             except requests.exceptions.ConnectionError:
                 print('Elastic Server is down, could not send the log')
 
