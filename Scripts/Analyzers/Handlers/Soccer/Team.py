@@ -7,5 +7,5 @@ class Team(Basic):
         self.cls_type = 'Te'
         self.side = side
         self.name = self.fixture['Score Box'][f'{side} Team']['Name']
-        self.log(f"Team Handler got: {self.name}", level=20)
+        self.logger.log(f"Team Handler got: {self.name}", level=20)
         self.load()

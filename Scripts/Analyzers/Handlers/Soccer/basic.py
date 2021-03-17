@@ -1,3 +1,5 @@
+from Scripts.Utility.db import DB
+from Scripts.Utility.logger import Logger
 from Scripts.Utility.time import get_days_difference
 from Scripts.Utility.re import get_prev_season_string, get_int_from_string
 
@@ -5,17 +7,17 @@ from Scripts.Utility.re import get_prev_season_string, get_int_from_string
 class Basic:
     ENV = 'Development'
     name = None
-    side = None
-    cls_type = None
+    side: str = None
+    cls_type: str = None
     update_data = None
 
     info = None
     fixture = None
-    logger = None
-    db_client = None
+    logger: Logger = None
+    db_client: DB = None
     db_name = 'Data-Handling'
 
-    def __init__(self, fixture, info, db=None, logger=None):
+    def __init__(self, fixture, info, db: DB = None, logger: Logger = None):
         self.add_db(db)
         self.add_logger(logger)
         self.add_info(info)
@@ -30,25 +32,16 @@ class Basic:
         if self.fixture is None:
             self.fixture = fixture
 
-    def add_logger(self, logger):
+    def add_logger(self, logger: Logger = None):
         if self.logger is None:
             self.logger = logger
 
-    def add_db(self, db):
+    def add_db(self, db: DB = None):
         if self.db_client is None:
             self.db_client = db
 
     def get_stats_dict(self):
         return self.stats
-
-    # Logger
-    def log(self, message: str, level: int = 10):
-        if self.logger is not None:
-            if self.ENV == 'Development':
-                level = 10
-            elif self.ENV == 'Production':
-                level = 20
-            self.logger.log(level, message)
 
     # call get_stats with the right params
     def load(self):
@@ -56,7 +49,7 @@ class Basic:
         # DB's is Comp name
         # Collections are Teams, Managers, Leagues
         # Each Document contain the next data: Competition: Many, Season: Many & All Time, Stats: dict
-        self.log(f'Cmd: basic load')
+        self.logger.log(f'Cmd: basic load', level=10)
         # Initialize
         cs = self.info['Season']
         ps = get_prev_season_string(cs)
@@ -77,7 +70,7 @@ class Basic:
 
     # Get stats from db or default
     def get_stats(self, collection, competition, season, key):
-        self.log(f'Cmd: get_stats for season: {season}')
+        self.logger.log(f'Cmd: get_stats for season: {season}', level=10)
         fil = {'Competition': competition, 'Season': season, 'Name': self.name}
         data = [] if collection is None else \
             [item for item in collection.find(fil)]
@@ -127,7 +120,7 @@ class Basic:
 
     # Read stats from fixture
     def read_and_save(self):
-        self.log(f'Cmd: read_and_save')
+        self.logger.log(f'Cmd: read_and_save', level=10)
         seasons = ['AT', 'CS']  # All Time, Current Season
         self.update_data = self.stats.copy()
         self.update_data.pop('PS')  # pop Past Season
@@ -168,7 +161,7 @@ class Basic:
         return temp
 
     def read_events(self, seasons, side):
-        self.log(f'Cmd: read_events')
+        self.logger.log(f'Cmd: read_events', level=10)
         # Half Time, Full Time, Extra Time
         half_index = {'First Half': 'HT', 'Half Time': 'FT'}  # , 'Full Time': 'ET'}
 
@@ -193,7 +186,7 @@ class Basic:
                         self.update_data[season_key][f'{side}_{half_index[half_key]}_{event_key}_{j}'].append(values[j])
 
     def read_poss(self, seasons, side):
-        self.log(f'Cmd: read_poss')
+        self.logger.log(f'Cmd: read_poss', level=10)
         # Read
         if 'Possession' in self.fixture['Stats'][f'{self.side} Team'].keys():
             home_value = get_int_from_string(self.fixture['Stats'][f'{self.side} Team']['Possession'])  # Possession
@@ -206,7 +199,7 @@ class Basic:
             self.update_data[season_key][f'{side}_Poss_A'].append(away_value)
 
     def read_stats(self, seasons, side):
-        self.log(f'Cmd: read_stats')
+        self.logger.log(f'Cmd: read_stats', level=10)
         stats_index = {'Passing Accuracy': 'PA', 'Shots on Target': 'ST', 'Saves': 'Sa'}
         type_index = {'Successful': 'Su', 'Total': 'To', 'Percent': 'Pe'}
         self.read_poss(seasons, side)  # Possession
@@ -227,7 +220,7 @@ class Basic:
                             .append(value)
 
     def read_extra_stats(self, seasons, side):
-        self.log(f'Cmd: read_extra_stats')
+        self.logger.log(f'Cmd: read_extra_stats', level=10)
         stats_index = {'Fouls': 'Fo', 'Corners': 'Co', 'Crosses': 'Cr', 'Touches': 'To', 'Tackles': 'Ta',
                        'Interceptions': 'In', 'Aerials Won': 'AW', 'Clearances': 'Cl', 'Offsides': 'Off',
                        'Goal Kicks': 'GK', 'Throw Ins': 'TI', 'Long Balls': 'LB'}
@@ -244,7 +237,7 @@ class Basic:
 
     # Update db
     def update_all(self):
-        self.log(f'Cmd: basic update')
+        self.logger.log(f'Cmd: basic update', level=10)
         # Initialize
         competition = self.info['Competition']
         cs = self.info['Season']
@@ -272,7 +265,7 @@ class Basic:
             self.db_client.insert_document(collection=collection, data=data)
 
     def run(self):
-        self.log(f'Cmd: basic run')
+        self.logger.log(f'Cmd: basic run', level=10)
         if self.name is not None:
             self.read_and_save()
             self.update_all()

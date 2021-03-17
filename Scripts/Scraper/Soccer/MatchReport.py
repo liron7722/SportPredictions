@@ -4,33 +4,32 @@ import re
 import pandas as pd
 from functools import reduce
 from bs4 import BeautifulSoup
+from Scripts.Utility.logger import Logger
 from Scripts.Utility.requests import connect
 from Scripts.Utility.exceptions import ParseError
 from Scripts.Scraper.Soccer.basic import Basic
 
 
 class MatchReport(Basic):
-    version = '1.0.2'
+    version = '1.0.4'
+    score_box = None
+    register_teams = None
+    events = None
+    stats = None
+    extra_stats = None
 
-    def __init__(self, url: str):
-        super().__init__(key=None, url=url)
+    def __init__(self, url: str, logger: Logger = None):
+        super().__init__(key='MatchReport', url=url, logger=logger)
         text = connect(url=self.url, return_text=True)
         page_text = text.replace('<!--\n', '')  # replace method used to get tables in comments
         self.soup = BeautifulSoup(page_text, "lxml")
         self.df_tables = pd.read_html(str(self.soup))
         self.register_teams_flag = True if len(self.soup.find_all('div', {'id': "field_wrap"})) > 0 else False
 
-        self.score_box = None
-        self.register_teams = None
-        self.events = None
-        self.stats = None
-        self.extra_stats = None
-
     def to_json(self):
         super().to_json()
         return {
             'URL': self.url,
-            'Version': self.version,
             'Score Box': self.score_box,
             'Register Teams': self.register_teams,
             'Events': self.events,
@@ -56,10 +55,7 @@ class MatchReport(Basic):
             # Wins - Draws - Losses Record
             if '\n' not in temp.contents[4]:
                 values = temp.contents[4].text.split('-')
-                if len(values) == 2:
-                    info_dict[key]['W_D_L'] = {'Wins': values[0], 'Draws': 0, 'Losses': values[1]}
-                elif len(values) == 3:
-                    info_dict[key]['W_D_L'] = {'Wins': values[0], 'Draws': values[1], 'Losses': values[2]}
+                info_dict[key]['W_D_L'] = {'Wins': values[0], 'Draws': values[1], 'Losses': values[2]}
                 location_flag = 4
             else:
                 location_flag = 3
@@ -146,8 +142,7 @@ class MatchReport(Basic):
                         else {'Minute': time_value[0], 'Added Time': time_value[1]},
                         'Scoreboard': temp.contents[1].contents[2].text,
                         'Event': temp.contents[3].contents[1].attrs['class'][1],
-                        'Player': temp.contents[3].contents[3].contents[1].contents[1].text,
-                        'Side': 'Home' if temp.attrs['class'][1] == 'a' else 'Away'
+                        'Player': temp.contents[3].contents[3].contents[1].contents[1].text
                     })
 
         return event_dict
@@ -172,18 +167,12 @@ class MatchReport(Basic):
             for j in range(3, n - 7, 4):
                 key = stats_soup.contents[j].text  # stat name
                 temp = stats_soup.contents[j + 2].contents[i].contents[1].contents[1].text  # stat values
-                # store value or separate to dict
-                teams_stats[item][key] = temp if key == 'Possession' else stat_to_dict(temp, i)
+                teams_stats[item][key] = temp if j == 3 else stat_to_dict(temp, i)  # store value or separate to dict
             # getting cards count
-            teams_stats[item]['Cards'] = {'Yellow': 0, 'Red': 0, '2nd_Yellow': 0}
+            teams_stats[item]['Cards'] = {'Yellow': 0, 'Red': 0}
             temp = stats_soup.contents[n - 2].contents[i].contents[1].contents[1].contents[0]
             for j in range(0, len(temp)):
-                if temp.contents[j].attrs['class'][0] == 'yellow_card':
-                    value = 'Yellow'
-                elif temp.contents[j].attrs['class'][0] == 'red_card':
-                    value = 'Red'
-                else:  # yellow_red_card
-                    value = '2nd_Yellow'
+                value = 'Yellow' if temp.contents[j].attrs['class'][0] == 'yellow_card' else 'Red'
                 teams_stats[item]['Cards'][value] += 1
         return teams_stats
 
@@ -208,27 +197,27 @@ class MatchReport(Basic):
         # Major league with more info
         if len(self.df_tables) == 20:
             return {'Home Team': {
-                'Players stats': self.set_players_stats(self.df_tables[3:9].copy()),
-                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[9].copy()),
-                'Shots stats': self.set_shots_stats(self.df_tables[-2].copy())
+                'Players stats': self.set_players_stats(self.df_tables[3:9]),
+                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[9]),
+                'Shots stats': self.set_shots_stats(self.df_tables[-2])
             },
                 'Away Team': {
-                    'Players stats': self.set_players_stats(self.df_tables[10:16].copy()),
-                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[16].copy()),
-                    'Shots stats': self.set_shots_stats(self.df_tables[-1].copy())
+                    'Players stats': self.set_players_stats(self.df_tables[10:16]),
+                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[16]),
+                    'Shots stats': self.set_shots_stats(self.df_tables[-1])
             }}
         elif 4 < len(self.df_tables) < 8:  # Minor league with less info
             return {'Home Team': {
-                'Players stats': self.set_players_stats(self.df_tables[-4].copy()),
-                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-3].copy()),
+                'Players stats': self.set_players_stats(self.df_tables[-4]),
+                'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-3]),
             },
                 'Away Team': {
-                    'Players stats': self.set_players_stats(self.df_tables[-2].copy()),
-                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-1].copy()),
+                    'Players stats': self.set_players_stats(self.df_tables[-2]),
+                    'Goalkeeper stats': self.set_goalkeeper_stats(self.df_tables[-1]),
                 }}
         elif 1 < len(self.df_tables) < 5:  # old fixture with less info
-            return {'Home Team': {'Players stats': self.set_players_stats(self.df_tables[-2].copy())},
-                    'Away Team': {'Players stats': self.set_players_stats(self.df_tables[-1].copy())}
+            return {'Home Team': {'Players stats': self.set_players_stats(self.df_tables[-2])},
+                    'Away Team': {'Players stats': self.set_players_stats(self.df_tables[-1])}
                     }
 
     def get_ref_info(self, values):  # Officials
@@ -248,21 +237,21 @@ class MatchReport(Basic):
         combine_table = self.change_col_name(combine_table)
         combine_table = self.change_nan(combine_table)
         return {
-            'Total': combine_table.iloc[-1].to_dict(),
-            'Players': [combine_table.iloc[i].to_dict() for i in range(len(combine_table[:-1]))]
+            'Total': combine_table.iloc[-1].to_json(),
+            'Players': [combine_table.iloc[i].to_json() for i in range(len(combine_table[:-1]))]
         }
 
     def set_goalkeeper_stats(self, table):
         table = self.change_col_name(table)
         table = self.change_nan(table)
-        return table.to_dict()
+        return table.to_json()
 
     def set_shots_stats(self, table):
         # Rename bad columns
         table = self.change_col_name(table)
         table = table.dropna(thresh=1).reset_index(drop=True)
         table = self.change_nan(table)
-        return [table.iloc[i].to_dict() for i in range(len(table))]
+        return [table.iloc[i].to_json() for i in range(len(table))]
 
     def parse(self):
         try:

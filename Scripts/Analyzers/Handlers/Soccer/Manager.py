@@ -9,7 +9,7 @@ class Manager(Basic):
         score_box = self.fixture['Score Box'][f'{side} Team']
         if 'Manager' in score_box.keys():
             self.name = score_box['Manager']
-            self.log(f"Manager Handler got: {self.name}", level=20)
+            self.logger.log(f"Manager Handler got: {self.name}", level=20)
 
         else:
             self.name = None

@@ -1,11 +1,12 @@
 import gc
+from os import environ
 from Scripts.Utility.db import DB
 from Scripts.Utility.logger import Logger
 from Scripts.Predictor.Soccer.RFR import RFR
 
 
 class PredictorHandler:
-    ENV = 'Development'
+    ENV = environ.get('ENV') or 'Production'
     predictors = dict()
 
     def __init__(self):
@@ -16,19 +17,10 @@ class PredictorHandler:
         self.load()
 
     def get_logger(self):
-        return Logger(f'{self.name}.log').get_logger()
+        return Logger(f'{self.name}', api=False)
 
     def get_db(self):
-        return DB(key='SOCCER', logger=self.logger)
-
-    # Logger
-    def log(self, message: str, level: int = 10):
-        if self.logger is not None:
-            if self.ENV == 'Development':
-                level = 10
-            elif self.ENV == 'Production':
-                level = 20
-            self.logger.log(level, message)
+        return DB(key=f'SOCCER_SPORT_PREDICTION', logger=self.logger)
 
     def load(self):
         self.predictors['RFR'] = RFR(db=self.db_client, logger=self.logger)
@@ -78,5 +70,5 @@ class PredictorHandler:
 
     def run(self):
         for key, predictor in self.predictors.items():
-            self.log(f'Running {key} Predictor create method')
+            self.logger.log(f'Running {key} Predictor create method', level=20)
             predictor.create()

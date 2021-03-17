@@ -1,3 +1,4 @@
+from os import environ
 from gc import collect
 from Scripts.Utility.db import DB
 from Scripts.Utility.logger import Logger
@@ -6,63 +7,50 @@ from Scripts.Analyzers.Handlers.Soccer.Fixture import Fixture
 
 
 class DataHandler:
-    ENV = 'Development'
+    ENV = environ.get('ENV') or 'Production'
+    logger: Logger = None
+    db_client: DB = None
 
     def __init__(self):
         self.name = 'Soccer_Handler'
-        self.logger = self.get_logger()
-        self.db_client = self.get_db()
+        self.logger = Logger(f'{self.name}', api=False)
+        self.db_client = DB(key=f'SOCCER_SPORT_PREDICTION', logger=self.logger)
 
-    def get_logger(self):
-        return Logger(f'{self.name}.log').get_logger()
-
-    def get_db(self):
-        return DB(key='SOCCER', logger=self.logger)
-
-    # Logger
-    def log(self, message: str, level: int = 10):
-        if self.logger is not None:
-            if self.ENV == 'Development':
-                level = 10
-            elif self.ENV == 'Production':
-                level = 20
-            self.logger.log(level, message)
-
-    def get_curr_season(self, comp_key):
+    def get_curr_season(self, comp_key: str):
         db = self.db_client.get_db(name=comp_key)
         season_names = self.db_client.get_collections_names(db=db)
         season_names.sort()
         return season_names[-1] if len(season_names) > 0 else '2020-2021'
 
-    def get_fixture_data(self, info, fixture):
+    def get_fixture_data(self, info: dict, fixture: dict):
         info['Season'] = self.get_curr_season(info['Competition'])
         fixture['Score Box']['DateTime'] = {'Date': None}
-        temp = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
-        return temp.get_stats_for_prediction()
+        match = Fixture(fixture=fixture, info=info, db=self.db_client, logger=self.logger)
+        return match.get_stats_for_prediction()
 
     # Load
     @time_wrapper
     def load_seasons(self, db, db_name, season_names, output_coll):
-        self.log(f'Cmd: load_seasons')
+        self.logger.log(f'Cmd: load_seasons', level=10)
         season_names.sort()
         for season in season_names:
             count = 1
-            self.log(f'handling season {season}')
+            self.logger.log(f'handling season {season}', level=10)
             info = {'Competition': db_name, 'Season': season}
             collection = self.db_client.get_collection(name=season, db=db)  # get collection
             sort_key = "Score Box.DateTime.Date"  # sort by date
             fixtures = self.db_client.get_documents_list(collection=collection, sort=sort_key, skip=0)  # get fixtures
             # Handle fixture
             for fixture in fixtures:
-                self.log(f'handling fixture no: {count}')
+                self.logger.log(f'handling fixture no: {count}', level=10)
                 try:
                     date_value = fixture['Score Box']['DateTime']['Date']
                     fixture['Score Box']['DateTime']['Date'] = change_date_format(date_value)
                     temp = Fixture(fixture=fixture, info=info, coll=output_coll, db=self.db_client, logger=self.logger)
                     temp.run()
                 except Exception:
-                    self.logger.exception(f'Got New error in data handling process comp: {db_name}\tseason: {season}\t'
-                                          f'no: {count}')
+                    self.logger.log(f'Got New error in data handling process comp: {db_name}\tseason: {season}\t'
+                                    f'no: {count}', level=50)
                 finally:
                     count += 1
                     collect()  # Tell Garbage Collector to release unreferenced memory
@@ -71,7 +59,7 @@ class DataHandler:
     # DB Load
     @time_wrapper
     def load_db(self):
-        self.log(f'Cmd: load_db')
+        self.logger.log(f'Cmd: load_db', level=10)
         competition_names = self.db_client.get_db_names()
         for key in ['admin', 'config', 'local', 'testing', 'Data-Handling', 'Prediction-Model', 'Prediction-Site',
                     'Big-5-European-Leagues']:
@@ -86,7 +74,7 @@ class DataHandler:
             collect()  # Tell Garbage Collector to release unreferenced memory
 
     def run(self):
-        self.log(f'Cmd: Data Handler run')
+        self.logger.log(f'Cmd: Data Handler run', level=20)
         while True:
             self.load_db()
             call_sleep(minutes=10)

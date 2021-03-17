@@ -1,46 +1,31 @@
+from os import environ
 from gc import collect
 from numpy import mean
 from pandas import DataFrame
 from pymongo import errors
 from pickle import loads, dumps
 from datetime import datetime as dt
+from Scripts.Utility.db import DB
+from Scripts.Utility.logger import Logger
 from Scripts.Utility.json import encode_data, save
 
 
 class Basic:
-    ENV = 'Development'
+    ENV = environ.get('ENV') or 'Production'
     version = '1.1.0'
     model_type = 'Basic'
 
-    logger = None
-    db_client = None
+    logger: Logger = None
+    db_client: DB = None
 
     x = None
     y = None
     models = dict()
 
-    def __init__(self, db=None, logger=None):
-        self.add_db(db)
-        self.add_logger(logger)
-        self.log(f'CMD: Initialize Predictor: {self.model_type}')
-
-    # Setters
-    def add_logger(self, logger):
-        if self.logger is None:
-            self.logger = logger
-
-    def add_db(self, db):
-        if self.db_client is None:
-            self.db_client = db
-
-    # Logger
-    def log(self, message: str, level: int = 10):
-        if self.logger is not None:
-            if self.ENV == 'Development':
-                level = 10
-            elif self.ENV == 'Production':
-                level = 20
-            self.logger.log(level, message)
+    def __init__(self, db: DB = None, logger: Logger = None):
+        self.db_client = db
+        self.logger = logger
+        self.logger.log(f'CMD: Initialize Predictor: {self.model_type}', level=20)
 
     # Getters
     def get_competition(self):
@@ -50,7 +35,7 @@ class Basic:
         return self.models[key].keys()
 
     def predict(self, comp_key, data):
-        self.log(f'CMD: Predict\tPredictor: {self.model_type}\tCompetition: {comp_key}')
+        self.logger.log(f'CMD: Predict\tPredictor: {self.model_type}\tCompetition: {comp_key}', level=20)
         data = DataFrame(data, index=[0]) if type(data) is dict else data
         for col in self.get_cols_to_drop():
             if col in data.columns:
@@ -73,7 +58,7 @@ class Basic:
         self.models[comp_key][key]['Model'] = model
         self.models[comp_key][key]['Accuracy'] = accuracy
         self.models[comp_key][key]['CR'] = cr
-        self.log(f'{self.model_type} Model for {key} was created with {accuracy} accuracy')
+        self.logger.log(f'{self.model_type} Model for {key} was created with {accuracy} accuracy', level=20)
 
     def save_to_db(self, comp_key, key, model, accuracy, cr):
         pickled_model = dumps(model)
@@ -99,19 +84,19 @@ class Basic:
 
     # Load
     def load(self):
-        self.log(f'CMD: Load\tPredictor: {self.model_type}')
+        self.logger.log(f'CMD: Load\tPredictor: {self.model_type}', level=20)
         db = self.db_client.get_db('Prediction-Model')
         competition_names = self.db_client.get_collections_names(db=db)
         for name in competition_names:
             if name == 'Parameters':
                 continue
-            self.log(f'Inner CMD: Load Competition\tPredictor: {self.model_type}\tCompetition: {name}')
+            self.logger.log(f'Inner CMD: Load Competition\tPredictor: {self.model_type}\tCompetition: {name}', level=20)
             # Load Competition
             collection = self.db_client.get_collection(name, db)
             documents = self.db_client.get_documents_list(collection)
             self.models[name] = dict()
             for item in documents:
-                self.log(f'Inner CMD: Load Models\tPredictor: {self.model_type}\tCompetition: {name}')
+                self.logger.log(f'Inner CMD: Load Models\tPredictor: {self.model_type}\tCompetition: {name}', level=20)
                 # Load Models per prediction column
                 key = item['Name']
                 accuracy = item['Accuracy']
@@ -119,7 +104,7 @@ class Basic:
                 pickled_model = item['Model']
                 model = loads(pickled_model)
                 self.save_to_memory(name, key, model, accuracy, cr)
-        self.log(f'CMD: Load\tPredictor: {self.model_type} is finished')
+        self.logger.log(f'CMD: Load\tPredictor: {self.model_type} is finished', level=20)
 
     def clear(self):
         self.x = None
@@ -135,7 +120,7 @@ class Basic:
         for name in competition_names:
             if name != 'Bundesliga':  # TODO drop after bug fix in data handling
                 continue  # TODO Make models for all competitions together?
-            self.log(f'Inner CMD: Create Model\tPredictor: {self.model_type}\tCompetition: {name}')
+            self.logger.log(f'Inner CMD: Create Model\tPredictor: {self.model_type}\tCompetition: {name}', level=20)
             # Load Competition
             collection = self.db_client.get_collection(name, db)
             documents = self.db_client.get_documents_list(collection)
@@ -176,10 +161,13 @@ class Basic:
         self.models[comp_key] = dict()
         for key in self.y.keys():
             if self.is_model_exist(comp_key, key) is False:
-                self.add_model(comp_key, key)
+                try:
+                    self.add_model(comp_key, key)
+                except TypeError:
+                    self.logger.exception(f'Got TypeError at key: {key} in Competition: {comp_key}')
 
     def add_model(self, comp_key, key):
-        self.log(f'CMD: Predictor: {self.model_type}\tCompetition: {comp_key}\tModel: {key}')
+        self.logger.log(f'CMD: Predictor: {self.model_type}\tCompetition: {comp_key}\tModel: {key}', level=20)
 
     @staticmethod
     def get_default_parameters():

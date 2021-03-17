@@ -7,14 +7,14 @@ class Referee(Basic):
         self.cls_type = 'Re'
         if len(self.fixture['Score Box']['Officials']) > 0:
             self.name = self.fixture['Score Box']['Officials'][0]['Name']
-            self.log(f"Referee Handler got: {self.name}", level=20)
+            self.logger.log(f"Referee Handler got: {self.name}", level=20)
         else:
             self.name = None
         self.load()
 
     # call get_stats with the right params
     def load(self):
-        self.log(f'Cmd: basic load')
+        self.logger.log(f'Cmd: basic load', level=10)
         # Initialize
         seasons = {'AT': 'All Time'}  # All Time
         collection_name = 'Referees'
@@ -22,14 +22,14 @@ class Referee(Basic):
 
     # Read stats from fixture
     def read_and_save(self):
-        self.log(f'Cmd: read_and_save')
+        self.logger.log(f'Cmd: read_and_save', level=10)
         seasons = ['AT']  # All Time
         self.update_data = self.stats.copy()
         self.read_events(seasons, None)
         self.read_extra_stats(seasons, None)
 
     def read_events(self, seasons, _):
-        self.log(f'Cmd: read_events')
+        self.logger.log(f'Cmd: read_events', level=10)
         half_index = {'First Half': 'HT', 'Half Time': 'FT'}  # , 'Full Time': 'ET'}  # Half Time, Full Time, Extra Time
         event_index = {'yellow_card': 'Ye', 'red_card': 'Re', 'yellow_red_card': '2Ye'}
         # Read and Save
@@ -58,7 +58,7 @@ class Referee(Basic):
                         self.update_data[season_key][f'{half_key}_{event_key}_{type_key}'].append(value)
 
     def read_extra_stats(self, seasons, _):
-        self.log(f'Cmd: read_extra_stats')
+        self.logger.log(f'Cmd: read_extra_stats', level=10)
         stats_index = {'Fouls': 'Fo'}
         temp = {'Fo': 0}  # Fouls
 
@@ -76,7 +76,7 @@ class Referee(Basic):
 
     # Update db
     def update_all(self):
-        self.log(f'Cmd: basic update')
+        self.logger.log(f'Cmd: basic update', level=10)
         # Initialize
         competition = self.info['Competition']
         seasons = {'AT': 'All Time'}  # All Time

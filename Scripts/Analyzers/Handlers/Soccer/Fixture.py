@@ -20,10 +20,10 @@ class Fixture(Basic):
                'Away Team': fixture['Score Box']['Away Team']['Name']}
         self.calculated_flag = self.is_match_calculated(fil)
         if self.calculated_flag is False or self.fixture['Version'] != MatchReport.version:
-            self.log(f"Fixture Handler got fixture: Competition: {info['Competition']}\tSeason: {info['Season']}\t"
-                     f"Date: {fixture['Score Box']['DateTime']['Date']}\t"
-                     f"Home Team: {fixture['Score Box']['Home Team']['Name']}\t"
-                     f"Away Team: {fixture['Score Box']['Away Team']['Name']}", level=20)
+            self.logger.log(f"Fixture Handler got fixture: Competition: {info['Competition']}\tSeason: {info['Season']}"
+                            f"\tDate: {fixture['Score Box']['DateTime']['Date']}\t"
+                            f"Home Team: {fixture['Score Box']['Home Team']['Name']}\t"
+                            f"Away Team: {fixture['Score Box']['Away Team']['Name']}", level=20)
             self.home_team = Team(fixture=fixture, info=info,  side='Home', db=self.db_client, logger=self.logger)
             self.away_team = Team(fixture=fixture, info=info,  side='Away', db=self.db_client, logger=self.logger)
             self.home_manager = Manager(fixture=fixture, info=info,  side='Home', db=self.db_client, logger=self.logger)
@@ -57,7 +57,7 @@ class Fixture(Basic):
         return temp[int(len(temp) / 2)]
 
     def general(self):
-        self.log(f'Cmd: Getting general info')
+        self.logger.log(f'Cmd: Getting general info', level=10)
         self.stats['Competition'] = self.info['Competition']
         self.stats['Season'] = self.info['Season']
         self.stats['Date'] = self.fixture['Score Box']['DateTime']['Date']
@@ -71,7 +71,7 @@ class Fixture(Basic):
 
     # Save all the stats in one dict before calculation
     def save(self):
-        self.log(f'Cmd: basic save')
+        self.logger.log(f'Cmd: basic save', level=10)
         index = {'HT': self.home_team, 'AT': self.away_team, 'HTM': self.home_manager, 'ATM': self.away_manager,
                  'Ref': self.referee}
         for key, item in index.items():
@@ -178,7 +178,7 @@ class Fixture(Basic):
         return res
 
     def copy_extra_data(self):
-        self.log(f'Cmd: extra_data')
+        self.logger.log(f'Cmd: extra_data', level=10)
         index = {'Home Team': 'HT', 'Away Team': 'AT'}
         for key in index.keys():
             if 'score_xg' in self.fixture['Score Box'][key].keys():
@@ -228,7 +228,7 @@ class Fixture(Basic):
 
     # Calculate all the stats
     def calculate(self):
-        self.log(f'Cmd: calculate')
+        self.logger.log(f'Cmd: calculate', level=10)
         # Copy and Calculate
         general_list = ['Competition', 'Season', 'Date', 'Attendance', 'Home Team', 'Away Team']
         for data_key, value in self.stats.items():
@@ -244,7 +244,7 @@ class Fixture(Basic):
 
     # Upload calculated fixture stats to the db
     def update_all(self, db_name='Data-Handling'):
-        self.log(f'Cmd: upload')
+        self.logger.log(f'Cmd: upload', level=10)
         fil = {'Competition': self.calculated_stats['Competition'], 'Season': self.calculated_stats['Season'],
                'Date': self.calculated_stats['Date'], 'Home Team': self.calculated_stats['Home Team'],
                'Away Team': self.calculated_stats['Away Team']}
@@ -274,7 +274,7 @@ class Fixture(Basic):
             collection = self.db_client.get_collection(name=comp, db=db)
             fil = {'Season': info['Season'], 'Date': info['Date'],
                    'Home Team': info['Home Team'], 'Away Team': info['Away Team']}
-            data = self.db_client.get_documents_list(collection=collection, fil=fil)
+            data = self.db_client.get_documents_list(collection=collection, fil=fil)[0]
             data['Version'] = self.version
             data['Attendance'] = self.stats['Attendance']
             data['Time'] = self.fixture['Score Box']['DateTime']['Time']  # add time
@@ -282,7 +282,7 @@ class Fixture(Basic):
             self.upload_to_db(collection=collection, data=data, fil=fil)
 
     def run(self):
-        self.log(f'Cmd: Fixture Handler run')
+        self.logger.log(f'Cmd: Fixture Handler run', level=20)
         if self.calculated_flag is False or self.fixture['Version'] != MatchReport.version:
             # Create match stats before calculation
             self.general()
@@ -299,10 +299,10 @@ class Fixture(Basic):
                 item.run()
             # Clean memory
             self.clean()
-        self.log(f'Cmd: Fixture Handler finished')
+        self.logger.log(f'Cmd: Fixture Handler finished', level=20)
 
     def get_stats_for_prediction(self):
-        self.log(f'Cmd: Getting fixture data for prediction')
+        self.logger.log(f'Cmd: Getting fixture data for prediction', level=20)
         self.save()
         self.copy_extra_data()
         self.calculate_h2h()
